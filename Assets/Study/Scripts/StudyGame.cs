@@ -110,13 +110,13 @@ public class StudyGame : MonoBehaviour {
   if(phase==Phase.Title){
    GUI.DrawTexture(new Rect(0,0,1232,900),titleShade);
    Fill(new Rect(0,0,1440,24),Color.black);Fill(new Rect(0,872,1440,28),Color.black);
-   Text(88,59,760,30,"R I S D   /   E F S   D R A W I N G",small);
+   Text(88,59,760,30,"A R T   S C H O O L   /   D R A W I N G",small);
    GUI.color=ochre;Text(1150,60,270,35,"02:00 AM",heading);GUI.color=Color.white;
    Text(1062,101,365,26,"THE NIGHT BEFORE IT'S DUE",small);
    GUI.color=new Color(.23f,.12f,.09f,.8f);Text(86,177,810,222,"UNFINISHED\nSTUDY",titleStyle);GUI.color=Color.white;
    Text(82,174,810,222,"UNFINISHED\nSTUDY",titleStyle);
    Line(new Vector2(89,416),new Vector2(592,416),1,new Color(.63f,.37f,.24f,.55f));
-   Text(90,450,680,155,"You're a RISD student.\nYou put off your EFS drawing homework.\nNow it's 2:00 AM, the night before it's due.\nThree drawings. An empty studio.",story);
+   Text(90,450,680,155,"You're an art school student.\nYou put off your drawing homework.\nNow it's 2:00 AM, the night before it's due.\nThree drawings. An empty studio.",story);
    GUI.color=new Color(.72f,.57f,.45f);Text(91,624,730,45,"Keep them in the light.",serifSmall);GUI.color=Color.white;
    Text(90,669,950,26,"LOOK UP TO REMEMBER · HOLD SPACE TO DRAW · KEEP THEM IN THE LIGHT",small);
    if(Button(90,702,545,"FINISH THE HOMEWORK   [ENTER]"))Enter();
@@ -131,7 +131,7 @@ public class StudyGame : MonoBehaviour {
    Text(95,839,700,30,"ENTER TO SKIP",small);
   }else if(phase==Phase.Playing){
    float uiAlpha=elapsed<60||drawing?1:.55f;
-   Fill(new Rect(36,32,310,152),new Color(.009f,.012f,.013f,.60f*uiAlpha));Text(55,45,310,30,"EFS / DUE THIS MORNING",small);
+   Fill(new Rect(36,32,310,152),new Color(.009f,.012f,.013f,.60f*uiAlpha));Text(55,45,310,30,"DUE THIS MORNING",small);
    for(int i=0;i<3;i++){
     float y=82+i*31;bool active=selected==i;Color c=active?ochre:ivory;
     Text(55,y,255,28,(i+1).ToString("00")+"   "+new[]{"SUSPENDED FIGURE","REACHING FIGURE","PLASTER & PEARS"}[i],small);
