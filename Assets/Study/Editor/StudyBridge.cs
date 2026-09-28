@@ -17,6 +17,8 @@ using System.IO;
    if(cmd=="build")StudioBuilder.BuildMac();
    if(cmd=="capture")Capture();
    if(cmd=="anatomy")StudyAnatomyPreview.Capture();
+   if(cmd=="designqa"){SetGameSize();EditorSceneManager.OpenScene("Assets/Study/Studio.unity");File.WriteAllText("DesignQA.request","run");EditorApplication.ExecuteMenuItem("Window/General/Game");EditorApplication.isPlaying=true;}
+   if(cmd=="play"){EditorApplication.ExecuteMenuItem("Window/General/Game");EditorApplication.isPlaying=true;}
    if(cmd=="regression"){EditorSceneManager.OpenScene("Assets/Study/Studio.unity");File.WriteAllText("StudyRegression.request","run");EditorApplication.isPlaying=true;}
    if(cmd=="qa"){SetGameSize();EditorSceneManager.OpenScene("Assets/Study/Studio.unity");File.WriteAllText("StudyQA.request","run");EditorApplication.ExecuteMenuItem("Window/General/Game");EditorApplication.isPlaying=true;}
    File.WriteAllText("StudyCommand.result","OK "+cmd);

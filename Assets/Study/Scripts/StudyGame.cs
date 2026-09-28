@@ -21,6 +21,7 @@ public class StudyGame : MonoBehaviour {
   room=gameObject.AddComponent<AudioSource>();room.clip=humClip;room.loop=true;room.volume=.08f;room.Play();
   foreach(var s in skeletons)s.Init(this);StudyNavigation.Build();intro=gameObject.AddComponent<StudyIntro>();intro.Initialize(this);soundscape=gameObject.AddComponent<StudySoundscape>();soundscape.Initialize(this);Cursor.lockState=CursorLockMode.None;Cursor.visible=true;
   #if UNITY_EDITOR
+  if(System.IO.File.Exists("DesignQA.request")){System.IO.File.Delete("DesignQA.request");new GameObject("Design QA runner").AddComponent<DesignQA>();}
   if(System.IO.File.Exists("StudyRegression.request")){System.IO.File.Delete("StudyRegression.request");gameObject.AddComponent<StudyRegression>();}
   if(System.IO.File.Exists("StudyQA.request")){System.IO.File.Delete("StudyQA.request");gameObject.AddComponent<StudyQA>();}
   #endif
@@ -54,7 +55,7 @@ public class StudyGame : MonoBehaviour {
   if(phase==Phase.Title){
    eye.fieldOfView=51;eye.transform.localRotation=Quaternion.Euler(4+Mathf.Sin(Time.time*.19f)*.3f,-18+Mathf.Sin(Time.time*.11f)*.5f,0);headlamp.intensity=1.2f*(1-.12f*Mathf.Pow(Mathf.Max(0,Mathf.Sin(Time.time*.71f)),28));
    intro.Complete();board.localPosition=new Vector3(.27f,-.52f,.64f);board.localRotation=Quaternion.Euler(-43,0,-12);
-   if(Input.GetKeyDown(KeyCode.Return))Enter();return;
+   if(Input.GetKeyDown(KeyCode.Return))Enter();if(Input.GetKeyDown(KeyCode.Alpha2))DesignPrototype.Launch();return;
   }
   if(phase==Phase.Reading){if(Input.GetKeyDown(KeyCode.Return))FoldNote();return;}
   if(phase==Phase.Entering){float seconds=Time.time-startTime;float t=Mathf.Clamp01(seconds/StudyIntro.Duration);float move=Mathf.SmoothStep(0,1,Mathf.Clamp01((t-.64f)/.36f));eye.fieldOfView=Mathf.Lerp(51,66,move);eye.transform.localRotation=Quaternion.Euler(Mathf.Lerp(4,pitch,move),Mathf.Lerp(-18,0,move),0);headlamp.intensity=Mathf.Lerp(1.2f,3.2f,move);intro.Animate(seconds);if(t>=1||Input.GetKeyDown(KeyCode.Return))StartStudy();return;}
@@ -110,21 +111,22 @@ public class StudyGame : MonoBehaviour {
   if(phase==Phase.Title){
    GUI.DrawTexture(new Rect(0,0,1232,900),titleShade);
    Fill(new Rect(0,0,1440,24),Color.black);Fill(new Rect(0,872,1440,28),Color.black);
-   Text(88,59,760,30,"A R T   S C H O O L   /   D R A W I N G",small);
+   Text(88,59,760,30,"A R T   S C H O O L   /   A F T E R   H O U R S",small);
    GUI.color=ochre;Text(1150,60,270,35,"02:00 AM",heading);GUI.color=Color.white;
    Text(1062,101,365,26,"THE NIGHT BEFORE IT'S DUE",small);
    GUI.color=new Color(.23f,.12f,.09f,.8f);Text(86,177,810,222,"UNFINISHED\nSTUDY",titleStyle);GUI.color=Color.white;
    Text(82,174,810,222,"UNFINISHED\nSTUDY",titleStyle);
    Line(new Vector2(89,416),new Vector2(592,416),1,new Color(.63f,.37f,.24f,.55f));
-   Text(90,450,680,155,"You're an art school student.\nYou put off your drawing homework.\nNow it's 2:00 AM, the night before it's due.\nThree drawings. An empty studio.",story);
-   GUI.color=new Color(.72f,.57f,.45f);Text(91,624,730,45,"Keep them in the light.",serifSmall);GUI.color=Color.white;
-   Text(90,669,950,26,"LOOK UP TO REMEMBER · HOLD SPACE TO DRAW · KEEP THEM IN THE LIGHT",small);
-   if(Button(90,702,545,"FINISH THE HOMEWORK   [ENTER]"))Enter();
+   Text(90,450,680,155,"You're an art school student.\nTwo assignments. One long night.\nChoose your studio. Finish either assignment first.\nDrawing or design — both are due this morning.",story);
+   GUI.color=new Color(.72f,.57f,.45f);Text(91,624,730,45,"Choose an assignment. Survive the deadline.",serifSmall);GUI.color=Color.white;
+   Text(90,669,950,26,"DRAWING: WATCH THE FIGURES.     DESIGN: ESCAPE THE CRITIQUE.",small);
+   if(Button(90,702,545,"DRAWING / UNFINISHED STUDY   [ENTER]"))Enter();
+   if(Button(670,702,645,"DESIGN / THE CRITIQUE   [2]"))DesignPrototype.Launch();
    if(GUI.Button(new Rect(91,774,260,30),"LEAVE THE STUDIO",small))Application.Quit();
    Text(90,826,880,28,"WASD  move     /     MOUSE  look     /     HOLD SPACE  draw",small);
    // Sparse charcoal registration marks, rather than a clean software frame.
    for(int i=0;i<9;i++){float x=1114+i*11;Line(new Vector2(x,789),new Vector2(x-3,814+(i%3)*3),i%3==0?2:1,new Color(.63f,.52f,.4f,.25f));}
-   Text(1096,740,350,30,"03 STUDIES / 00 COMPLETE",small);
+   Text(1050,826,350,30,"DESIGN / EARLY PROTOTYPE",small);
   }else if(phase==Phase.Reading){
    if(Button(453,796,535,"PUT THE NOTE AWAY    [ENTER]"))FoldNote();
   }else if(phase==Phase.Entering){
@@ -164,7 +166,7 @@ public class StudyGame : MonoBehaviour {
   }else if(phase==Phase.Paused){
    Fill(new Rect(0,0,1440,900),new Color(.01f,.02f,.02f,.85f));Text(90,170,1000,120,"Hold your breath.",large);
    Key(94,350,"WASD","Move through the studio");Key(94,398,"MOUSE","Aim your headlamp");Key(94,446,"SPACE","Hold to draw · Release to look up");
-   if(Button(94,558,345,"RETURN TO THE ROOM [ESC]"))StartStudy();if(Button(94,631,345,"START AGAIN"))SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+   if(Button(94,558,345,"RETURN TO THE ROOM [ESC]"))StartStudy();if(Button(94,631,345,"CHOOSE ASSIGNMENT"))SceneManager.LoadScene("Studio");
   }else if(phase==Phase.Lost){
    float t=Time.time-endTime;Fill(new Rect(0,0,1440,900),new Color(.006f,.01f,.01f,black));
    if(t>1.8f){Text(90,95,800,35,"THE WHEELS HAVE STOPPED.",small);Text(83,245,900,210,"An unfinished\nstudy.",large);Text(92,490,700,70,"You left something out of the light.",serifSmall);

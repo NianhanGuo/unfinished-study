@@ -19,3 +19,6 @@ StudyRegression.results
 *.booproj
 *.suo
 *.tmp
+
+DesignQA.request
+DesignQA-output/
