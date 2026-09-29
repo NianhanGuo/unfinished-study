@@ -15,7 +15,7 @@ public class DesignPrototype : MonoBehaviour {
  public const int SolidMask=1<<8;
  float yaw,pitch,stepClock,noticeUntil;string notice="";
  readonly List<Transform> signs=new List<Transform>();
- Material wall,wood,metal,paper,accent,skin; Transform model;AudioSource sound;AudioClip foot,tool;
+ Light briefingLight;Material wall,wood,metal,paper,accent,skin; Transform model;AudioSource sound;AudioClip foot,tool;
  GUIStyle title,text,small,button;Texture2D white;
  public static DesignPrototype Launch(){
   Scene old=SceneManager.GetActiveScene();var scene=SceneManager.CreateScene("Design — The Critique " + System.Guid.NewGuid().ToString("N").Substring(0,6));SceneManager.SetActiveScene(scene);
@@ -32,7 +32,7 @@ public class DesignPrototype : MonoBehaviour {
  GameObject Box(string n,Vector3 p,Vector3 s,Material m,bool solid=true){return Shape(n,transform,PrimitiveType.Cube,p,s,m,solid);}
  void Sign(string caption,Vector3 position,Quaternion rotation,float size=.13f){
   var o=new GameObject(caption);o.transform.SetParent(transform);o.transform.position=position;o.transform.rotation=rotation;
-  var t=o.AddComponent<TextMesh>();t.text=caption;t.fontSize=64;t.characterSize=size;t.anchor=TextAnchor.MiddleCenter;t.color=new Color(.87f,.86f,.73f);if(caption.Contains(" / "))signs.Add(o.transform);
+  var t=o.AddComponent<TextMesh>();t.text=caption;t.fontSize=64;t.characterSize=size;t.anchor=TextAnchor.MiddleCenter;t.color=new Color(.87f,.86f,.73f);signs.Add(o.transform);
  }
  void LightAt(Vector3 p,Color color,float range,float intensity){var o=new GameObject("Practical light");o.transform.SetParent(transform);o.transform.position=p;var l=o.AddComponent<Light>();l.type=LightType.Point;l.color=color;l.range=range;l.intensity=intensity;}
  void Table(Vector3 p){
@@ -74,10 +74,11 @@ public class DesignPrototype : MonoBehaviour {
   var lamp=cam.AddComponent<Light>();lamp.type=LightType.Spot;lamp.range=14;lamp.spotAngle=75;lamp.intensity=2.2f;lamp.color=new Color(.85f,.88f,.76f);lamp.shadows=LightShadows.Soft;
   sound=body.AddComponent<AudioSource>();foot=Tone(100,.08f);tool=Tone(190,.15f);
   var enemy=new GameObject("Professor / ceiling spider");enemy.transform.SetParent(transform);enemy.transform.position=new Vector3(0,4.7f,9);teacher=enemy.AddComponent<DesignSpider>();teacher.Initialize(this,skin,metal,paper);
+  var key=new GameObject("Briefing / professor key light");key.transform.SetParent(transform);key.transform.position=new Vector3(2.5f,2.6f,5.8f);key.transform.LookAt(new Vector3(0,4,9));briefingLight=key.AddComponent<Light>();briefingLight.type=LightType.Spot;briefingLight.spotAngle=70;briefingLight.range=10;briefingLight.intensity=2;briefingLight.color=new Color(.87f,.76f,.59f);briefingLight.shadows=LightShadows.Soft;
   Physics.SyncTransforms();DesignNavigation.Build();SetCursor(false);
  }
  public static AudioClip Tone(float hz,float length){int n=(int)(22050*length);var samples=new float[n];for(int i=0;i<n;i++){float t=i/22050f;samples[i]=Mathf.Sin(t*hz*6.283f)*Mathf.Exp(-t*24)*.3f;}var c=AudioClip.Create("Dry knock",n,1,22050,false);c.SetData(samples,0);return c;}
- public void Begin(){phase=Phase.Playing;SetCursor(true);Notice("Critique has started. Finish your model and bring it to the front.",5);}
+ public void Begin(){briefingLight.enabled=false;eye.transform.localPosition=Vector3.up*1.6f;eye.transform.localRotation=Quaternion.identity;phase=Phase.Playing;SetCursor(true);Notice("WASD move · SHIFT sprint · hold C crouch · hold E work",7);}
  void SetCursor(bool locked){if(automation)return;Cursor.lockState=locked?CursorLockMode.Locked:CursorLockMode.None;Cursor.visible=!locked;}
  public void Notice(string s,float seconds=2.5f){notice=s;noticeUntil=Time.time+seconds;}
  public void Catch(){if(phase!=Phase.Playing)return;phase=Phase.Caught;SetCursor(false);working=false;}
@@ -97,8 +98,9 @@ public class DesignPrototype : MonoBehaviour {
   crouching=want;player.height=want?.85f:1.75f;player.center=Vector3.up*player.height*.5f;eye.transform.localPosition=Vector3.up*(want?.68f:1.6f);
  }
  void Update(){
-  foreach(var sign in signs){Vector3 d=sign.position-eye.transform.position;d.y=0;if(d.sqrMagnitude>.01f)sign.rotation=Quaternion.LookRotation(d);}
+  foreach(var sign in signs){sign.gameObject.SetActive(phase!=Phase.Brief);if(!sign.name.Contains(" / "))continue;Vector3 d=sign.position-eye.transform.position;d.y=0;if(d.sqrMagnitude>.01f)sign.rotation=Quaternion.LookRotation(d);}
   if(Input.GetKeyDown(KeyCode.Escape)){if(phase==Phase.Playing){phase=Phase.Paused;working=false;SetCursor(false);}else if(phase==Phase.Paused){phase=Phase.Playing;SetCursor(true);}}
+  if(phase==Phase.Brief){eye.transform.position=new Vector3(3.4f+Mathf.Sin(Time.unscaledTime*.12f)*.2f,2.4f,4.8f);eye.transform.LookAt(new Vector3(0,3.7f,9));eye.transform.rotation*=Quaternion.Euler(0,-22,0);return;}
   if(phase!=Phase.Playing)return;elapsed+=Time.deltaTime;
   if(automation)return;
   yaw+=Input.GetAxis("Mouse X")*1.7f;pitch=Mathf.Clamp(pitch-Input.GetAxis("Mouse Y")*1.6f,-85,80);player.transform.rotation=Quaternion.Euler(0,yaw,0);eye.transform.localRotation=Quaternion.Euler(pitch,0,0);
@@ -111,16 +113,19 @@ public class DesignPrototype : MonoBehaviour {
   working=Input.GetKey(KeyCode.E)&&CanWork();if(working){Work(Time.deltaTime);if(!sound.isPlaying)sound.PlayOneShot(tool,.35f);}
  }
  void OnApplicationFocus(bool focus){if(!automation&&!focus&&phase==Phase.Playing){phase=Phase.Paused;working=false;SetCursor(false);}}
- void Styles(){if(title!=null)return;title=new GUIStyle(GUI.skin.label){fontSize=62,fontStyle=FontStyle.Bold};text=new GUIStyle(GUI.skin.label){fontSize=24,wordWrap=true};small=new GUIStyle(text){fontSize=18};button=new GUIStyle(GUI.skin.button){fontSize=22};foreach(var s in new[]{title,text,small})s.normal.textColor=new Color(.91f,.87f,.73f);}
+ void Styles(){if(title!=null)return;title=new GUIStyle(GUI.skin.label){fontSize=68,font=Resources.Load<Font>("Georgia")};text=new GUIStyle(GUI.skin.label){fontSize=24,wordWrap=true};small=new GUIStyle(text){fontSize=18};button=new GUIStyle(GUI.skin.button){fontSize=22};foreach(var s in new[]{title,text,small})s.normal.textColor=new Color(.91f,.87f,.73f);}
  void Panel(Rect r,float alpha=.86f){GUI.color=new Color(.025f,.04f,.045f,alpha);GUI.DrawTexture(r,white);GUI.color=Color.white;}
  void Label(float x,float y,float w,float h,string s,GUIStyle style){GUI.Label(new Rect(x,y,w,h),s,style);}
+ bool MenuButton(Rect r,string caption){bool hover=r.Contains(Event.current.mousePosition);Panel(r,hover?.96f:.78f);GUI.color=new Color(.68f,.6f,.44f);GUI.DrawTexture(new Rect(r.x,r.y,r.width,1),white);GUI.color=Color.white;Label(r.x+22,r.y+17,r.width-40,r.height,caption,small);return GUI.Button(r,GUIContent.none,GUIStyle.none);}
  void OnGUI(){
   Styles();float scale=Mathf.Min(Screen.width/1440f,Screen.height/900f);GUI.matrix=Matrix4x4.TRS(new Vector3((Screen.width-1440*scale)/2,(Screen.height-900*scale)/2,0),Quaternion.identity,Vector3.one*scale);
-  if(phase==Phase.Brief){Panel(new Rect(70,90,1050,730));Label(105,115,950,45,"DESIGN ASSIGNMENT / PLAYABLE PROTOTYPE",small);Label(100,165,990,100,"THE CRITIQUE",title);
-   Label(105,280,960,140,"Critique has started. Your model isn't ready.\nYour professor is collecting students — finish your work before he catches you.",text);
-   Label(105,420,930,190,"CUT → BUILD → PHOTOGRAPH → SUBMIT\n\nSprint between cover. Crouch beneath worktables, then escape from the opposite side when his head comes down. Tall dividers break his line of sight. The cutter makes noise.",text);
-   Label(105,630,930,60,"WASD move · MOUSE look · SHIFT sprint · C / CTRL crouch · HOLD E work",small);
-   if(GUI.Button(new Rect(105,710,400,60),"FINISH THE DESIGN ASSIGNMENT",button))Begin();if(GUI.Button(new Rect(535,710,260,60),"BACK TO ASSIGNMENTS",small))ReturnToMenu();return;
+  if(phase==Phase.Brief){Panel(new Rect(62,90,690,722),.88f);Label(96,121,610,35,"02 / DESIGN ASSIGNMENT",small);Label(91,183,660,165,"THE\nCRITIQUE",title);
+   Label(96,360,590,75,"Critique has started.\nYour model isn't ready.",text);
+   Label(96,477,600,40,"01   CUT → BUILD → PHOTOGRAPH",text);
+   Label(96,535,600,40,"02   BREAK SIGHT. CRAWL UNDER TABLES.",small);
+   Label(96,587,600,40,"03   BRING YOUR WORK TO THE FRONT.",small);
+   if(MenuButton(new Rect(96,674,590,60),"ENTER THE CLASSROOM    →"))Begin();
+   if(GUI.Button(new Rect(96,753,450,35),"← CHOOSE ANOTHER ASSIGNMENT",small))ReturnToMenu();return;
   }
   if(phase==Phase.Playing){
    Panel(new Rect(28,25,540,132),.72f);Label(48,39,510,35,Tasks[Mathf.Min(stage,3)],text);Label(48,82,500,30,stage<3?"Progress saved: "+Mathf.RoundToInt(progress[stage]*100)+"%":"Your work is ready. Hold E at the critique desk.",small);

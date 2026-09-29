@@ -9,7 +9,7 @@ public class StudyGame : MonoBehaviour {
  public Phase phase=Phase.Title;
  public float memory,observation,elapsed;public int selected=-1,tutorial;public bool drawing,hasDrawn;
  [NonSerialized]public bool automation,automatedDraw;
- public StudyIntro intro;public StudySoundscape soundscape;
+ public StudyIntro intro;public StudySoundscape soundscape;public StudyFrontEnd frontEnd;
  public bool Marking{get;private set;} public float Lower=>lower;
  public static StudyGame Instance;
  float observationLostAt;float yaw,pitch,lower,endTime,footTime,startTime,flashTime,lastProgress,black;bool lightsOn,ruined;int lookedAt=-1;
@@ -19,8 +19,9 @@ public class StudyGame : MonoBehaviour {
   pixel=Texture2D.whiteTexture;titleShade=new Texture2D(256,1,TextureFormat.RGBA32,false);for(int i=0;i<256;i++)titleShade.SetPixel(i,0,new Color(.006f,.008f,.009f,.96f*Mathf.Pow(1-i/255f,.72f)));titleShade.wrapMode=TextureWrapMode.Clamp;titleShade.Apply();yaw=body.transform.eulerAngles.y;artwork.Initialize();
   pencil=gameObject.AddComponent<AudioSource>();pencil.clip=pencilClip;pencil.loop=true;pencil.volume=0;pencil.Play();
   room=gameObject.AddComponent<AudioSource>();room.clip=humClip;room.loop=true;room.volume=.08f;room.Play();
-  foreach(var s in skeletons)s.Init(this);StudyNavigation.Build();intro=gameObject.AddComponent<StudyIntro>();intro.Initialize(this);soundscape=gameObject.AddComponent<StudySoundscape>();soundscape.Initialize(this);Cursor.lockState=CursorLockMode.None;Cursor.visible=true;
+  foreach(var s in skeletons)s.Init(this);StudyNavigation.Build();intro=gameObject.AddComponent<StudyIntro>();intro.Initialize(this);soundscape=gameObject.AddComponent<StudySoundscape>();soundscape.Initialize(this);frontEnd=gameObject.AddComponent<StudyFrontEnd>();frontEnd.Initialize(this);Cursor.lockState=CursorLockMode.None;Cursor.visible=true;
   #if UNITY_EDITOR
+  if(System.IO.File.Exists("MenuQA.request")){System.IO.File.Delete("MenuQA.request");new GameObject("Menu QA runner").AddComponent<StudyMenuQA>();}
   if(System.IO.File.Exists("DesignQA.request")){System.IO.File.Delete("DesignQA.request");new GameObject("Design QA runner").AddComponent<DesignQA>();}
   if(System.IO.File.Exists("StudyRegression.request")){System.IO.File.Delete("StudyRegression.request");gameObject.AddComponent<StudyRegression>();}
   if(System.IO.File.Exists("StudyQA.request")){System.IO.File.Delete("StudyQA.request");gameObject.AddComponent<StudyQA>();}
@@ -28,8 +29,8 @@ public class StudyGame : MonoBehaviour {
   
  }
  public void AimAt(Vector3 p){var d=p-eye.transform.position;yaw=Quaternion.LookRotation(d).eulerAngles.y;pitch=-Mathf.Asin(d.normalized.y)*Mathf.Rad2Deg;}
- public void StartStudy(){if(intro)intro.Complete();phase=Phase.Playing;Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;}
- void Enter(){phase=Phase.Reading;intro.Present();Cursor.lockState=CursorLockMode.None;Cursor.visible=true;}
+ public void StartStudy(){if(frontEnd)frontEnd.RestoreForPlay();if(intro)intro.Complete();phase=Phase.Playing;Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;}
+ public void Enter(){if(frontEnd)frontEnd.RestoreForPlay();phase=Phase.Reading;intro.Present();Cursor.lockState=CursorLockMode.None;Cursor.visible=true;}
  void FoldNote(){phase=Phase.Entering;startTime=Time.time;Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;}
  void Pause(){phase=Phase.Paused;drawing=false;Marking=false;pencil.volume=0;Cursor.lockState=CursorLockMode.None;Cursor.visible=true;}
  void OnApplicationFocus(bool f){if(!automation&&!f&&(phase==Phase.Playing||phase==Phase.Entering))Pause();}
@@ -52,11 +53,7 @@ public class StudyGame : MonoBehaviour {
  }
  void Update(){
   if(Input.GetKeyDown(KeyCode.Escape)){if(phase==Phase.Playing)Pause();else if(phase==Phase.Paused)StartStudy();}
-  if(phase==Phase.Title){
-   eye.fieldOfView=51;eye.transform.localRotation=Quaternion.Euler(4+Mathf.Sin(Time.time*.19f)*.3f,-18+Mathf.Sin(Time.time*.11f)*.5f,0);headlamp.intensity=1.2f*(1-.12f*Mathf.Pow(Mathf.Max(0,Mathf.Sin(Time.time*.71f)),28));
-   intro.Complete();board.localPosition=new Vector3(.27f,-.52f,.64f);board.localRotation=Quaternion.Euler(-43,0,-12);
-   if(Input.GetKeyDown(KeyCode.Return))Enter();if(Input.GetKeyDown(KeyCode.Alpha2))DesignPrototype.Launch();return;
-  }
+  if(phase==Phase.Title){frontEnd.Tick(Time.unscaledDeltaTime);return;}
   if(phase==Phase.Reading){if(Input.GetKeyDown(KeyCode.Return))FoldNote();return;}
   if(phase==Phase.Entering){float seconds=Time.time-startTime;float t=Mathf.Clamp01(seconds/StudyIntro.Duration);float move=Mathf.SmoothStep(0,1,Mathf.Clamp01((t-.64f)/.36f));eye.fieldOfView=Mathf.Lerp(51,66,move);eye.transform.localRotation=Quaternion.Euler(Mathf.Lerp(4,pitch,move),Mathf.Lerp(-18,0,move),0);headlamp.intensity=Mathf.Lerp(1.2f,3.2f,move);intro.Animate(seconds);if(t>=1||Input.GetKeyDown(KeyCode.Return))StartStudy();return;}
 
@@ -109,24 +106,7 @@ public class StudyGame : MonoBehaviour {
  void OnGUI(){
   if(!artwork||artwork.Pages==null)return;Styles();float uiScale=Mathf.Min(Screen.width/1440f,Screen.height/900f);GUI.matrix=Matrix4x4.TRS(new Vector3((Screen.width-1440*uiScale)/2,(Screen.height-900*uiScale)/2,0),Quaternion.identity,new Vector3(uiScale,uiScale,1));
   if(phase==Phase.Title){
-   GUI.DrawTexture(new Rect(0,0,1232,900),titleShade);
-   Fill(new Rect(0,0,1440,24),Color.black);Fill(new Rect(0,872,1440,28),Color.black);
-   Text(88,59,760,30,"A R T   S C H O O L   /   A F T E R   H O U R S",small);
-   GUI.color=ochre;Text(1150,60,270,35,"02:00 AM",heading);GUI.color=Color.white;
-   Text(1062,101,365,26,"THE NIGHT BEFORE IT'S DUE",small);
-   GUI.color=new Color(.23f,.12f,.09f,.8f);Text(86,177,810,222,"UNFINISHED\nSTUDY",titleStyle);GUI.color=Color.white;
-   Text(82,174,810,222,"UNFINISHED\nSTUDY",titleStyle);
-   Line(new Vector2(89,416),new Vector2(592,416),1,new Color(.63f,.37f,.24f,.55f));
-   Text(90,450,680,155,"You're an art school student.\nTwo assignments. One long night.\nChoose your studio. Finish either assignment first.\nDrawing or design — both are due this morning.",story);
-   GUI.color=new Color(.72f,.57f,.45f);Text(91,624,730,45,"Choose an assignment. Survive the deadline.",serifSmall);GUI.color=Color.white;
-   Text(90,669,950,26,"DRAWING: WATCH THE FIGURES.     DESIGN: ESCAPE THE CRITIQUE.",small);
-   if(Button(90,702,545,"DRAWING / UNFINISHED STUDY   [ENTER]"))Enter();
-   if(Button(670,702,645,"DESIGN / THE CRITIQUE   [2]"))DesignPrototype.Launch();
-   if(GUI.Button(new Rect(91,774,260,30),"LEAVE THE STUDIO",small))Application.Quit();
-   Text(90,826,880,28,"WASD  move     /     MOUSE  look     /     HOLD SPACE  draw",small);
-   // Sparse charcoal registration marks, rather than a clean software frame.
-   for(int i=0;i<9;i++){float x=1114+i*11;Line(new Vector2(x,789),new Vector2(x-3,814+(i%3)*3),i%3==0?2:1,new Color(.63f,.52f,.4f,.25f));}
-   Text(1050,826,350,30,"DESIGN / EARLY PROTOTYPE",small);
+   frontEnd.Draw();
   }else if(phase==Phase.Reading){
    if(Button(453,796,535,"PUT THE NOTE AWAY    [ENTER]"))FoldNote();
   }else if(phase==Phase.Entering){
@@ -162,7 +142,7 @@ public class StudyGame : MonoBehaviour {
    }
    string hint=tutorial==0?"01   AIM YOUR LIGHT AT THE SKELETON AND KEEP LOOKING":drawing?(memory>0?"HOLD SPACE TO KEEP DRAWING · RELEASE TO LOOK UP":"MEMORY EMPTY — RELEASE SPACE AND OBSERVE AGAIN"):selected>=0&&subjects[selected].progress>=1?"STUDY COMPLETE · FIND THE NEXT NUMBERED SUBJECT":memory>0?"FORM REMEMBERED — HOLD SPACE TO DRAW":"KEEP LOOKING AT A SUBJECT TO REMEMBER ITS FORM";
    Fill(new Rect(250,811,940,52),new Color(.009f,.01f,.011f,.82f));Text(272,826,940,36,hint,small);
-   if(tutorial==2&&!drawing)Text(440,750,900,40,"Listen. The wheels move when you lower your eyes.",serifSmall);
+   if(tutorial==2&&!drawing)Text(440,750,900,40,"Keep checking behind you when you lower your eyes.",serifSmall);
   }else if(phase==Phase.Paused){
    Fill(new Rect(0,0,1440,900),new Color(.01f,.02f,.02f,.85f));Text(90,170,1000,120,"Hold your breath.",large);
    Key(94,350,"WASD","Move through the studio");Key(94,398,"MOUSE","Aim your headlamp");Key(94,446,"SPACE","Hold to draw · Release to look up");

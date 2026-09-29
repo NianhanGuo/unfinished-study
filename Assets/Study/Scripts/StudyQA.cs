@@ -9,7 +9,7 @@ public class StudyQA:MonoBehaviour {
  IEnumerator Start(){
   g=GetComponent<StudyGame>();g.automation=true;Application.runInBackground=true;
   yield return new WaitForSeconds(1);yield return Capture("01-Title");
-  Check(!g.intro.Visible&&g.board.gameObject.activeSelf,"Title page shows the studio and keeps the task note hidden");
+  Check(!g.intro.Visible&&!g.board.gameObject.activeSelf,"Cinematic cover shows the studio without the task note or player board");
   Check(Resources.Load<AudioClip>("HorrorMusic")!=null&&Resources.Load<AudioClip>("Heartbeat")!=null,"Supplied background music and heartbeat clips load");
   Check(StudySoundscape.RateForDistance(1)>StudySoundscape.RateForDistance(4)&&StudySoundscape.RateForDistance(4)>StudySoundscape.RateForDistance(9),"Heartbeat tempo increases as the nearest skeleton approaches");
   float headMin=float.MaxValue,headMax=float.MinValue,sole=float.MaxValue;

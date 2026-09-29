@@ -1,7 +1,9 @@
 # Unfinished Study — Drawing + Design prototype
 
 使用 Unity **6000.0.34f1** 打开本项目，打开 `Assets/Study/Studio.unity`，点击 Play。
-主菜单两个关卡均直接开放：**Enter / Drawing** 进入绘画作业，**2 / Design** 进入设计作业；无需通关解锁。
+进入流程：**动态工作室封面 → 作业选择 → 简短准备页 → 游戏**。封面点击按钮或按 Enter；作业选择页按 **1 / Enter** 选择 Drawing，按 **2** 选择 Design，Escape 返回封面。两关均直接开放，无需通关解锁。
+
+封面使用实时缓慢环绕镜头与独立的冷暖灯光；进入 Drawing 时恢复原来的玩家镜头与照明。作业卡片使用游戏内渲染的实景图片。Design 准备页展示老师蜘蛛，移动与操作提示在进入教室后出现。
 
 ## Design：The Critique（可玩灰盒原型）
 
@@ -16,6 +18,8 @@
 - Escape 暂停；失败可重试 Design，也可以返回菜单重新选择作业。
 
 关卡运行时由 `DesignPrototype` 创建独立场景；无需外部素材或额外场景配置，原 Drawing 场景保持可用。当前美术、音效和节奏均为原型，制作操作暂用按住 E 表示。
+
+菜单验证：编辑器桥接命令 `menuqa` 检查封面运动、页面切换、灯光恢复与两关入口，截图存于 `MenuQA-output/`。
 
 验证：`DesignQA` 在真实 Play Mode 中检查工作进度、提交胜利、桌底碰撞、视线遮挡、绕障路线、追逐与攻击、暂停、重试、返回菜单及 Drawing 启动。编辑器桥接命令 `designqa` 运行检查，结果与截图写入忽略提交的 `DesignQA-output/`。
 

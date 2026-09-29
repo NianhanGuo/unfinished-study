@@ -20,10 +20,11 @@ float4 frag(v2f_img i):SV_Target {
  }
  c*=1-saturate(ao/12*1.6)*.72*smoothstep(1.1,1.7,depth);
  // Restrained warm highlights, cool shadows and a soft photographic shoulder.
+ c*=lerp(1.0,1.12,_Title);
  float l=dot(c,float3(.2126,.7152,.0722));c*=lerp(float3(.90,.98,1.025),float3(1.035,1.0,.945),saturate(l*2));
  c=(c*(1.45*c+.13))/(c*(1.45*c+.52)+.14);c=pow(max(c,0),.96);
- float2 delta=uv-.5;float vignette=smoothstep(.82,.24,length(delta*float2(1,.86)));c*=lerp(.48,1,vignette);
- float grain=random(uv*float2(1440,900)+floor(_TimeValue*24))-.5;c+=grain*(.0022+.0018*_Title);
+ float2 delta=uv-.5;float vignette=smoothstep(.82,.24,length(delta*float2(1,.86)));c*=lerp(lerp(.48,.72,_Title),1,vignette);
+ float grain=random(uv*float2(1440,900)+floor(_TimeValue*24))-.5;c+=grain*lerp(.0022,.0014,_Title);
  return float4(c,1);
 }
 ENDCG
