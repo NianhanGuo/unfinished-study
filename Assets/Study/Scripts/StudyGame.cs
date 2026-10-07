@@ -35,14 +35,16 @@ public class StudyGame : MonoBehaviour {
  void Pause(){phase=Phase.Paused;drawing=false;Marking=false;pencil.volume=0;Cursor.lockState=CursorLockMode.None;Cursor.visible=true;}
  void OnApplicationFocus(bool f){if(!automation&&!f&&(phase==Phase.Playing||phase==Phase.Entering))Pause();}
  public bool Illuminated(Vector3 p){Vector3 d=p-headlamp.transform.position;return d.magnitude<headlamp.range&&Vector3.Angle(headlamp.transform.forward,d)<headlamp.spotAngle*.44f&&!Physics.Linecast(headlamp.transform.position,p,1<<8);}
- public int GetObserved(){
+ public int GetObserved(){int target=FindSubject(true,true);return target>=0&&subjects[target].progress<1?target:-1;}
+ public int GetHovered(){return FindSubject(true,false);}
+ int FindSubject(bool includeComplete,bool requireClear){
   int result=-1;float best=12;
   for(int i=0;i<subjects.Length;i++){
-   if(subjects[i].progress>=1)continue;
+   if(!includeComplete&&subjects[i].progress>=1)continue;
    for(int j=0;j<subjects[i].ObservationPointCount;j++){
     Vector3 point=subjects[i].ObservationPoint(j),d=point-eye.transform.position;
     float angle=Vector3.Angle(eye.transform.forward,d);
-    if(angle<best&&d.magnitude<headlamp.range&&Illuminated(point)){result=i;best=angle;}
+    if(angle<best&&d.magnitude<headlamp.range&&(!requireClear||Illuminated(point))){result=i;best=angle;}
    }
   }
   return result;
@@ -73,12 +75,12 @@ public class StudyGame : MonoBehaviour {
    if(seen>=0&&subjects[seen].progress<1){
     if(selected!=seen){selected=seen;memory=0;observation=0;}
     if(lookedAt!=seen)observation=0;lookedAt=seen;observationLostAt=Time.time;observation+=Time.deltaTime;
-    if(observation>=1.2f){if(memory<4.9f)flashTime=Time.time;memory=5;tutorial=Mathf.Max(1,tutorial);}
-   }else if(Time.time-observationLostAt>.18f){lookedAt=-1;observation=0;}
+    if(observation>=StudyTuning.ObserveSeconds){if(memory<4.9f)flashTime=Time.time;memory=StudyTuning.MemorySeconds;tutorial=Mathf.Max(1,tutorial);}
+   }else if(Time.time-observationLostAt>StudyTuning.ObservationGrace){lookedAt=-1;observation=0;}
    if(hasDrawn)tutorial=Mathf.Max(3,tutorial);
   }
   Marking=drawing&&lower>.82f&&memory>0;
-  if(Marking){hasDrawn=true;tutorial=Mathf.Max(2,tutorial);memory=Mathf.Max(0,memory-Time.deltaTime);subjects[selected].progress=Mathf.Min(1,subjects[selected].progress+Time.deltaTime/34);}
+  if(Marking){hasDrawn=true;tutorial=Mathf.Max(2,tutorial);memory=Mathf.Max(0,memory-Time.deltaTime);subjects[selected].progress=Mathf.Min(1,subjects[selected].progress+Time.deltaTime/StudyTuning.DrawingSeconds[selected]);}
   if(selected>=0)artwork.RenderProgress(selected,subjects[selected].progress,Marking);
   pencil.volume=Mathf.MoveTowards(pencil.volume,Marking&&artwork.TipDown?.19f:0,Time.deltaTime*2.5f);pencil.pitch=.88f+Mathf.Sin(elapsed*2.3f)*.07f;
   bool done=true;foreach(var s in subjects)if(s.progress<1)done=false;if(done)Finish(true);
@@ -120,9 +122,13 @@ public class StudyGame : MonoBehaviour {
     Fill(new Rect(55,y+24,270,2),new Color(.6f,.6f,.5f,.17f));Fill(new Rect(55,y+24,270*subjects[i].progress,2),c);
    }
    if(!drawing&&lower<.3f){
-    int seen=GetObserved();Fill(new Rect(718,448,4,4),ivory);
+    int seen=GetHovered();Fill(new Rect(718,448,4,4),ivory);
     if(seen>=0){Text(758,421,510,35,subjects[seen].title,heading);
-     Text(758,463,570,40,subjects[seen].progress>=1?"COMPLETE — IT STILL FOLLOWS":memory>0&&observation>=1.2f?"FORM REMEMBERED · HOLD SPACE":"HOLD YOUR LIGHT HERE",small);
+     Text(758,463,570,40,subjects[seen].progress>=1?(seen==2?"STUDY COMPLETE":"COMPLETE — IT STILL FOLLOWS"):GetObserved()!=seen?"VIEW BLOCKED — MOVE TO SEE THE SUBJECT":memory>0&&observation>=StudyTuning.ObserveSeconds?"REMEMBERED · HOLD SPACE":"OBSERVING — KEEP YOUR LIGHT HERE",small);
+    }
+    if(seen>=0&&subjects[seen].progress<1){
+     float fill=GetObserved()==seen?Mathf.Clamp01(observation/StudyTuning.ObserveSeconds):0;
+     for(int k=0;k<32;k++){float a=k*Mathf.PI*2/32,b=(k+1)*Mathf.PI*2/32;Line(new Vector2(720+Mathf.Cos(a)*15,450+Mathf.Sin(a)*15),new Vector2(720+Mathf.Cos(b)*15,450+Mathf.Sin(b)*15),2,k<fill*32?ochre:new Color(.6f,.6f,.5f,.25f));}
     }
     for(int i=0;i<3;i++){
      if(subjects[i].progress>=1)continue;if(tutorial<2&&i!=0)continue;

@@ -28,6 +28,8 @@ public class StudyRegression:MonoBehaviour {
   g.automatedDraw=false;g.AimAt(g.subjects[2].ObservationPoint(1));yield return new WaitForSeconds(1.9f);
   Check(g.memory>4.9f,"Third drawing refills after releasing draw");
   g.automatedDraw=true;yield return new WaitForSeconds(.8f);Check(g.subjects[2].progress>before,"Third drawing resumes after refill");g.automatedDraw=false;yield return new WaitForSeconds(.5f);
+  g.subjects[2].progress=1;g.AimAt(g.subjects[2].ObservationPoint(1));yield return new WaitForSeconds(.5f);
+  Check(g.GetHovered()==2&&g.GetObserved()==-1,"Completed subject remains identifiable without recharging memory");g.subjects[2].progress=before;
   var wall=GameObject.CreatePrimitive(PrimitiveType.Cube);wall.layer=8;wall.transform.position=(g.eye.transform.position+g.subjects[2].focus.position)/2;wall.transform.localScale=new Vector3(4,4,.4f);Physics.SyncTransforms();
   Check(g.GetObserved()==-1,"Opaque wall blocks observation");Destroy(wall);yield return null;
   Place(new Vector3(0,0,-3.5f));g.AimAt(g.eye.transform.position+Vector3.forward*5);yield return null;
@@ -35,6 +37,8 @@ public class StudyRegression:MonoBehaviour {
   yield return new WaitForSeconds(1);Check(rear.transform.position.z>initial.z+.2f,"Rear skeleton closes in from behind");
   g.AimAt(rear.torso.position+Vector3.up*.25f);yield return new WaitForSeconds(.3f);initial=rear.transform.position;
   yield return new WaitForSeconds(.5f);Check(rear.frozen&&Vector3.Distance(initial,rear.transform.position)<.01f,"Turning the light onto rear skeleton freezes it");
+  rear.enabled=false;rear.transform.position=g.body.transform.position+g.body.transform.forward*.65f;g.AimAt(rear.torso.position+Vector3.up*.25f);yield return new WaitForSeconds(.4f);rear.enabled=true;yield return new WaitForSeconds(.3f);
+  Check(g.phase==StudyGame.Phase.Playing&&rear.frozen,"Close-range illumination wins over contact capture");
   rear.enabled=false;rear.transform.position=new Vector3(0,0,-.5f);g.AimAt(g.eye.transform.position+Vector3.forward*5);yield return null;
   Vector3 target=rear.PursuitDestination();Check(Mathf.Abs(target.x)>.5f&&(target-g.body.transform.position).magnitude>2,"Stalker chooses lateral flank instead of frontal charge");
   g.AimAt(g.eye.transform.position+Vector3.right*5);yield return null;Check(Vector3.Distance(target,rear.PursuitDestination())>.5f,"Flank destination responds to player turning");

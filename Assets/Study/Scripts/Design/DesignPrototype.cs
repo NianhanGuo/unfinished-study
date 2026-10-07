@@ -13,6 +13,7 @@ public class DesignPrototype : MonoBehaviour {
  public readonly Vector3[] stations={new Vector3(-7,0,7),new Vector3(7,0,-1),new Vector3(-6,0,-8),new Vector3(0,0,11)};
  public static readonly string[] Tasks={"01  CUT THE BOARD","02  ASSEMBLE THE MODEL","03  PHOTOGRAPH YOUR WORK","04  SUBMIT AT THE CRITIQUE DESK"};
  public const int SolidMask=1<<8;
+ public DesignWorkshop workshop; public bool moving; bool exhausted; float staminaWait;
  float yaw,pitch,stepClock,noticeUntil;string notice="";
  readonly List<Transform> signs=new List<Transform>();
  Light briefingLight;Material wall,wood,metal,paper,accent,skin; Transform model;AudioSource sound;AudioClip foot,tool;
@@ -36,9 +37,9 @@ public class DesignPrototype : MonoBehaviour {
  }
  void LightAt(Vector3 p,Color color,float range,float intensity){var o=new GameObject("Practical light");o.transform.SetParent(transform);o.transform.position=p;var l=o.AddComponent<Light>();l.type=LightType.Point;l.color=color;l.range=range;l.intensity=intensity;}
  void Table(Vector3 p){
-  tables.Add(p);Box("Crawl-under worktable",p+Vector3.up*1.35f,new Vector3(3.8f,.18f,2.4f),wood);
-  foreach(float x in new[]{-1.65f,1.65f})foreach(float z in new[]{-.95f,.95f})Box("Table leg",p+new Vector3(x,.65f,z),new Vector3(.14f,1.3f,.14f),metal);
-  Box("Cutting mat",p+new Vector3(0,1.45f,0),new Vector3(1.9f,.015f,1.25f),accent,false);
+  tables.Add(p);Box("Crawl-under worktable",p+Vector3.up*1.11f,new Vector3(3.8f,.14f,2.4f),wood);
+  foreach(float x in new[]{-1.65f,1.65f})foreach(float z in new[]{-.95f,.95f})Box("Table leg",p+new Vector3(x,.52f,z),new Vector3(.14f,1.04f,.14f),metal);
+  Box("Cutting mat",p+new Vector3(0,1.19f,0),new Vector3(1.9f,.015f,1.25f),accent,false);
  }
  void Build(){
   white=Texture2D.whiteTexture;
@@ -75,23 +76,42 @@ public class DesignPrototype : MonoBehaviour {
   sound=body.AddComponent<AudioSource>();foot=Tone(100,.08f);tool=Tone(190,.15f);
   var enemy=new GameObject("Professor / ceiling spider");enemy.transform.SetParent(transform);enemy.transform.position=new Vector3(0,4.7f,9);teacher=enemy.AddComponent<DesignSpider>();teacher.Initialize(this,skin,metal,paper);
   var key=new GameObject("Briefing / professor key light");key.transform.SetParent(transform);key.transform.position=new Vector3(2.5f,2.6f,5.8f);key.transform.LookAt(new Vector3(0,4,9));briefingLight=key.AddComponent<Light>();briefingLight.type=LightType.Spot;briefingLight.spotAngle=70;briefingLight.range=10;briefingLight.intensity=2;briefingLight.color=new Color(.87f,.76f,.59f);briefingLight.shadows=LightShadows.Soft;
+  DesignStudio.Dress(this,wall,wood,metal,paper,accent,skin);
+  workshop=gameObject.AddComponent<DesignWorkshop>();workshop.Initialize(this,wood,metal,paper,accent,skin);
   Physics.SyncTransforms();DesignNavigation.Build();SetCursor(false);
  }
  public static AudioClip Tone(float hz,float length){int n=(int)(22050*length);var samples=new float[n];for(int i=0;i<n;i++){float t=i/22050f;samples[i]=Mathf.Sin(t*hz*6.283f)*Mathf.Exp(-t*24)*.3f;}var c=AudioClip.Create("Dry knock",n,1,22050,false);c.SetData(samples,0);return c;}
- public void Begin(){briefingLight.enabled=false;eye.transform.localPosition=Vector3.up*1.6f;eye.transform.localRotation=Quaternion.identity;phase=Phase.Playing;SetCursor(true);Notice("WASD move · SHIFT sprint · hold C crouch · hold E work",7);}
+ public void Begin(){briefingLight.enabled=false;eye.transform.localPosition=Vector3.up*1.6f;eye.transform.localRotation=Quaternion.identity;phase=Phase.Playing;SetCursor(true);Notice("WASD move · SHIFT sprint · C crouch",4);}
  void SetCursor(bool locked){if(automation)return;Cursor.lockState=locked?CursorLockMode.Locked:CursorLockMode.None;Cursor.visible=!locked;}
  public void Notice(string s,float seconds=2.5f){notice=s;noticeUntil=Time.time+seconds;}
  public void Catch(){if(phase!=Phase.Playing)return;phase=Phase.Caught;SetCursor(false);working=false;}
  public void ReturnToMenu(){SetCursor(false);SceneManager.LoadScene("Studio");}
  public int UnderTable(){for(int i=0;i<tables.Count;i++){Vector3 d=player.transform.position-tables[i];if(Mathf.Abs(d.x)<1.9f&&Mathf.Abs(d.z)<1.2f&&crouching)return i;}return -1;}
- public bool CanWork(){if(stage>3)return false;Vector3 delta=stations[stage]-player.transform.position;delta.y=0;return delta.magnitude<2.7f&&!Physics.Linecast(eye.transform.position,stations[stage]+Vector3.up*1.2f,SolidMask);}
+ public Vector3 WorkTarget=>workshop?workshop.Target(stage):stations[Mathf.Clamp(stage,0,3)]+Vector3.up*1.2f;
+ public bool CanWork(){
+  if(stage<0||stage>3||moving||crouching)return false;
+  Vector3 flat=stations[stage]-player.transform.position;flat.y=0;
+  Vector3 target=WorkTarget,aim=target-eye.transform.position;
+  float angle=stage==2?9:stage==1?16:StudyTuning.WorkAngle;
+  return flat.magnitude<StudyTuning.WorkRange&&Vector3.Angle(eye.transform.forward,aim)<angle&&!Physics.Linecast(eye.transform.position,target,SolidMask);
+ }
+ public void ReleaseWork(){working=false;if(workshop)workshop.Release();}
  public void Work(float dt){
-  if(!CanWork()||phase!=Phase.Playing)return;
-  if(stage==3){phase=Phase.Complete;working=false;SetCursor(false);return;}
-  progress[stage]=Mathf.Min(1,progress[stage]+dt/new[]{5f,7f,3f}[stage]);
-  if(stage==0)teacher.Hear(stations[0]);
-  if(stage==1){int parts=Mathf.FloorToInt(progress[1]*5);while(model.childCount<parts+1){int i=model.childCount;Shape("Foamboard volume",model,PrimitiveType.Cube,new Vector3((i-3)*.22f,.12f+i*.045f,0),new Vector3(.17f,.18f+i*.09f,.5f),paper);}}
-  if(progress[stage]>=1){stage++;Notice(stage==3?"Model documented. Bring it to the critique desk.":"Step complete. Progress saved — move to the next station.",4);}
+  if(dt<=0||!CanWork()||phase!=Phase.Playing||workshop.NeedsRelease)return;
+  if(stage==3){phase=Phase.Complete;working=false;SetCursor(false);workshop.Submit();return;}
+  int oldStage=stage;float old=progress[stage];
+  int pieces=stage==2?1:3;int next=Mathf.Min(pieces,Mathf.FloorToInt(old*pieces+.0001f)+1);
+  float boundary=next/(float)pieces;
+  progress[stage]=Mathf.Min(boundary,old+dt/StudyTuning.DesignSeconds[stage]);
+  if(progress[stage]>=boundary-.00001f){progress[stage]=boundary;workshop.CompleteAction(oldStage,next);}
+  if(stage==1){int parts=Mathf.FloorToInt(progress[1]*5+.0001f);while(model.childCount<parts+1){int i=model.childCount;Shape("Foamboard volume",model,PrimitiveType.Cube,new Vector3((i-3)*.22f,.12f+i*.045f,0),new Vector3(.17f,.18f+i*.09f,.5f),paper);}}
+  if(progress[stage]>=1){stage++;Notice(stage==3?"Photo ready. Bring your work to critique.":"Step complete. Find station "+(stage+1).ToString("00")+".",2.5f);}
+ }
+ public bool TickStamina(float dt,bool wantsSprint){
+  bool sprint=wantsSprint&&!exhausted&&stamina>0;
+  if(sprint){stamina=Mathf.Max(0,stamina-dt);staminaWait=StudyTuning.StaminaDelay;if(stamina<=0)exhausted=true;}
+  else {staminaWait=Mathf.Max(0,staminaWait-dt);if(staminaWait<=0)stamina=Mathf.Min(4,stamina+dt*StudyTuning.StaminaRecovery);if(stamina>=.8f)exhausted=false;}
+  return sprint;
  }
  public void SetCrouch(bool want){
   if(!want&&crouching&&Physics.CheckCapsule(player.transform.position+Vector3.up*.4f,player.transform.position+Vector3.up*1.5f,.27f,SolidMask))want=true;
@@ -100,17 +120,18 @@ public class DesignPrototype : MonoBehaviour {
  void Update(){
   foreach(var sign in signs){sign.gameObject.SetActive(phase!=Phase.Brief);if(!sign.name.Contains(" / "))continue;Vector3 d=sign.position-eye.transform.position;d.y=0;if(d.sqrMagnitude>.01f)sign.rotation=Quaternion.LookRotation(d);}
   if(Input.GetKeyDown(KeyCode.Escape)){if(phase==Phase.Playing){phase=Phase.Paused;working=false;SetCursor(false);}else if(phase==Phase.Paused){phase=Phase.Playing;SetCursor(true);}}
-  if(phase==Phase.Brief){eye.transform.position=new Vector3(3.4f+Mathf.Sin(Time.unscaledTime*.12f)*.2f,2.4f,4.8f);eye.transform.LookAt(new Vector3(0,3.7f,9));eye.transform.rotation*=Quaternion.Euler(0,-22,0);return;}
+  if(phase==Phase.Brief){eye.transform.position=new Vector3(-8,1.9f,-7);eye.transform.LookAt(new Vector3(-3,1.3f,3));return;}
   if(phase!=Phase.Playing)return;elapsed+=Time.deltaTime;
   if(automation)return;
   yaw+=Input.GetAxis("Mouse X")*1.7f;pitch=Mathf.Clamp(pitch-Input.GetAxis("Mouse Y")*1.6f,-85,80);player.transform.rotation=Quaternion.Euler(0,yaw,0);eye.transform.localRotation=Quaternion.Euler(pitch,0,0);
   SetCrouch(Input.GetKey(KeyCode.LeftControl)||Input.GetKey(KeyCode.C));
   Vector3 input=new Vector3(Input.GetAxisRaw("Horizontal"),0,Input.GetAxisRaw("Vertical")).normalized;
-  bool sprint=Input.GetKey(KeyCode.LeftShift)&&input.sqrMagnitude>.1f&&!crouching&&stamina>.05f;
-  stamina=Mathf.Clamp(stamina+Time.deltaTime*(sprint?-1:.65f),0,4);
-  float speed=crouching?2.2f:sprint?6.4f:3.4f;player.Move((player.transform.TransformDirection(input)*speed+Vector3.down*5)*Time.deltaTime);
+  moving=input.sqrMagnitude>.01f;
+  bool sprint=TickStamina(Time.deltaTime,Input.GetKey(KeyCode.LeftShift)&&moving&&!crouching);
+  float speed=crouching?StudyTuning.CrouchSpeed:sprint?StudyTuning.SprintSpeed:StudyTuning.WalkSpeed;player.Move((player.transform.TransformDirection(input)*speed+Vector3.down*5)*Time.deltaTime);
   if(input.sqrMagnitude>.1f){stepClock+=Time.deltaTime*speed;if(stepClock>.95f){stepClock=0;sound.PlayOneShot(foot,crouching?.15f:.6f);}}
-  working=Input.GetKey(KeyCode.E)&&CanWork();if(working){Work(Time.deltaTime);if(!sound.isPlaying)sound.PlayOneShot(tool,.35f);}
+  if(!Input.GetKey(KeyCode.E))ReleaseWork();
+  working=Input.GetKey(KeyCode.E)&&CanWork()&&!workshop.NeedsRelease;if(working)Work(Time.deltaTime);
  }
  void OnApplicationFocus(bool focus){if(!automation&&!focus&&phase==Phase.Playing){phase=Phase.Paused;working=false;SetCursor(false);}}
  void Styles(){if(title!=null)return;title=new GUIStyle(GUI.skin.label){fontSize=68,font=Resources.Load<Font>("Georgia")};text=new GUIStyle(GUI.skin.label){fontSize=24,wordWrap=true};small=new GUIStyle(text){fontSize=18};button=new GUIStyle(GUI.skin.button){fontSize=22};foreach(var s in new[]{title,text,small})s.normal.textColor=new Color(.91f,.87f,.73f);}
@@ -128,14 +149,14 @@ public class DesignPrototype : MonoBehaviour {
    if(GUI.Button(new Rect(96,753,450,35),"← CHOOSE ANOTHER ASSIGNMENT",small))ReturnToMenu();return;
   }
   if(phase==Phase.Playing){
-   Panel(new Rect(28,25,540,132),.72f);Label(48,39,510,35,Tasks[Mathf.Min(stage,3)],text);Label(48,82,500,30,stage<3?"Progress saved: "+Mathf.RoundToInt(progress[stage]*100)+"%":"Your work is ready. Hold E at the critique desk.",small);
-   if(stage<3){GUI.color=new Color(.4f,.7f,.6f);GUI.DrawTexture(new Rect(49,127,480*progress[stage],5),white);GUI.color=Color.white;}
-   Label(1090,32,320,35,"SPRINT  "+Mathf.CeilToInt(stamina*25)+"%",small);Label(1090,66,320,35,crouching?"CROUCHED":"SHIFT sprint / C crouch",small);
+   Panel(new Rect(28,25,465,95),.65f);Label(48,39,510,35,Tasks[Mathf.Min(stage,3)],text);Label(48,78,440,30,stage<3?workshop.StepLabel:"Work ready — submit at station 04",small);
+   if(stage<3){GUI.color=new Color(.4f,.7f,.6f);GUI.DrawTexture(new Rect(49,113,425*progress[stage],3),white);GUI.color=Color.white;}
+   if(stamina<3.95f||elapsed<8)Label(1180,32,235,35,"SPRINT  "+Mathf.CeilToInt(stamina*25)+"%",small);
    Label(710,430,30,40,"·",text);
-   string hint=CanWork()?"HOLD E — "+Tasks[stage]+"  /  release to flee":UnderTable()>=0?"Stay low. If his face appears, leave through the other side.":"Find the numbered workstation. Tall dividers break line of sight.";
-   Panel(new Rect(220,800,1000,60),.78f);Label(242,816,965,40,hint,small);
-   if(Time.time<noticeUntil){Panel(new Rect(320,675,820,80),.8f);Label(343,692,775,65,notice,text);}
-   if(teacher.IsThreat){GUI.color=new Color(.7f,.15f,.09f,.75f);GUI.DrawTexture(new Rect(0,0,1440,7),white);GUI.color=Color.white;Label(650,45,410,40,teacher.Status,small);}
+   string hint=CanWork()?(workshop.NeedsRelease?"RELEASE E — THEN START THE NEXT ACTION":workshop.Prompt):UnderTable()>=0?"COVER — TWO EXITS":Vector3.Distance(player.transform.position,stations[stage])<2.3f?"STEP CLOSE · LOOK AT THE MARKED WORK AREA":elapsed<8?"Find station 01. Tall screens break sight.":"";
+   if(hint.Length>0){Panel(new Rect(330,810,780,43),.65f);Label(348,821,750,30,hint,small);}
+   if(Time.time<noticeUntil){Panel(new Rect(360,731,720,52),.72f);Label(380,741,680,40,notice,small);}
+   if(teacher.IsThreat){GUI.color=new Color(.7f,.15f,.09f,.75f);GUI.DrawTexture(new Rect(0,0,1440,7),white);GUI.color=Color.white;Label(630,35,510,35,teacher.Status,small);}
    Vector3 p=eye.WorldToViewportPoint(stations[Mathf.Min(stage,3)]+Vector3.up*2.7f);if(p.z>0&&p.x>.05f&&p.x<.95f&&p.y>.15f&&p.y<.8f)Label(p.x*1440-50,(1-p.y)*900,200,50,(stage+1).ToString("00")+"  /  "+Mathf.RoundToInt(Vector3.Distance(player.transform.position,stations[stage]))+"m",small);
    return;
   }

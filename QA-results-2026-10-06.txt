@@ -1,0 +1,125 @@
+Unfinished Study — 2026-10-06 verification
+Unity 6000.0.34f1 · Editor Play Mode
+
+These are scripted runtime checks, not a human playtest or a standalone build verification.
+Art remains procedural prototype geometry. Timing and tension need player observation.
+
+Design mechanics and chase
+PASS Design accessible without Drawing completion
+PASS Cover, professor and physical workshop created
+PASS Cannot stand through lowered table
+PASS Crouched player exits table opening
+PASS Can stand after exit
+PASS Close aligned cutting station is usable
+PASS Back-facing interaction rejected
+PASS Back-facing work cannot advance progress
+PASS Movement interrupts work immediately
+PASS Old remote 2m interaction rejected
+PASS Partial cutting advances
+PASS Leaving retains progress but blocks remote work
+PASS Pause blocks production
+PASS One cut completes one physical action
+PASS Holding through a cut cannot skip remaining actions
+PASS Work audio does not move the scene root
+PASS Ordered workstation 0 completes after its distinct actions
+PASS Ordered workstation 1 completes after its distinct actions
+PASS Ordered workstation 2 completes after its distinct actions
+PASS Finished work submits and ends pursuit
+PASS Four seconds depletes sprint
+PASS Exhaustion does not flicker sprint on next frame
+PASS Stamina waits before regeneration
+PASS Recovered stamina permits sprint again
+PASS Front-facing player visible
+PASS Player behind teacher is not automatically detected
+PASS Sight range limited
+PASS Tall screen blocks line of sight
+PASS Distant sound does not reveal a target
+PASS Nearby sound investigates source rather than live player
+PASS Ceiling route clears full-height screens
+PASS First detection supplies extended warning
+PASS Visible target enters chase
+PASS Chase moves at the intended fast pace
+PASS Pause freezes pursuit
+PASS Second encounter warns again
+PASS Breaking sight during warning preserves last known position
+PASS Table gives a committed probe instead of immediate capture
+PASS Leaving opposite side evades committed attack
+PASS Remaining in visible reach is captured
+PASS Retry resets work and returns to briefing
+PASS Return restores assignment menu
+PASS Drawing still starts after Design
+DONE
+
+Drawing observation and pursuit regression
+PASS Second skeleton starts behind player
+PASS Rear spawn clears walls and furniture
+PASS Memorize still life from (0.00, 0.00, -1.00) target 1
+PASS Memorize still life from (0.00, 0.00, -1.00) target 2
+PASS Memorize still life from (0.00, 0.00, -1.00) target 3
+PASS Memorize still life from (-1.00, 0.00, 0.00) target 1
+PASS Memorize still life from (-1.00, 0.00, 0.00) target 2
+PASS Memorize still life from (-1.00, 0.00, 0.00) target 3
+PASS Memorize still life from (1.00, 0.00, 0.00) target 1
+PASS Memorize still life from (1.00, 0.00, 0.00) target 2
+PASS Memorize still life from (1.00, 0.00, 0.00) target 3
+PASS Memorize still life from (0.00, 0.00, 1.00) target 1
+PASS Memorize still life from (0.00, 0.00, 1.00) target 2
+PASS Memorize still life from (0.00, 0.00, 1.00) target 3
+PASS Third drawing advances and exhausts memory
+PASS No drawing without memory
+PASS Third drawing refills after releasing draw
+PASS Third drawing resumes after refill
+PASS Completed subject remains identifiable without recharging memory
+PASS Opaque wall blocks observation
+PASS Rear skeleton closes in from behind
+PASS Turning the light onto rear skeleton freezes it
+PASS Close-range illumination wins over contact capture
+PASS Stalker chooses lateral flank instead of frontal charge
+PASS Flank destination responds to player turning
+PASS Stalker moves when outside flashlight
+PASS Flank route avoids player center and furniture
+DONE
+
+Drawing integration and endings
+PASS Cinematic cover shows the studio without the task note or player board
+PASS Supplied background music and heartbeat clips load
+PASS Heartbeat tempo increases as the nearest skeleton approaches
+PASS Measured adult body-to-skull height ratio: 7.52 heads (expected 7 to 8)
+PASS Player viewmodel contains no hands, sleeves or cuffs
+PASS Floating charcoal remains on the animated drawing rig
+PASS Skeleton motion uses spatial looping wheel audio
+PASS Actual nearest-skeleton movement raises the runtime heartbeat tempo
+PASS Supplied music crosses the loop boundary and continues on one active source
+PASS Start opens a separate readable task note
+PASS The note waits for the player instead of folding automatically
+PASS Fold and pocket sequence reveals the board and starts play
+PASS Aiming at the marked subject completes observation and stores memory
+PASS Headlamp freezes the skeleton
+PASS Opaque objects block the freezing light
+PASS Drawing animates the floating charcoal along actual stroke coordinates
+PASS Holding draw advances progress
+PASS Lowering the headlamp releases the skeleton
+PASS Visible charcoal pixels appear during the first drawing interval
+PASS Memory exhaustion stops drawing and requests another observation
+PASS Looking up restores drawing memory
+PASS Pursuit routes around the still-life table
+PASS A completed subject continues pursuing
+PASS Final stroke triggers the delayed ceiling-light reveal
+PASS Contact triggers the hand-grab failure sequence
+PASS Edited recording assets are assigned to all sound roles
+DONE
+
+Menu and assignment entry
+PASS Cover starts with cinematic view and no player board
+PASS Cover camera visibly orbits the studio
+PASS Cover camera does not move gameplay body
+PASS Separate assignment selection page opens
+PASS Assignment page returns to cover
+PASS Drawing opens its short physical note
+PASS Drawing restores first-person camera pose
+PASS Cover light rig is disabled and player lamp restored
+PASS Drawing gameplay remains available
+PASS Design opens its concise preparation page
+PASS Design briefing restores player eye position on entry
+PASS Return from Design resets the cover correctly
+DONE
