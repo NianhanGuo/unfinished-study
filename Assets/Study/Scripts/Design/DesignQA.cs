@@ -18,6 +18,8 @@ public class DesignQA:MonoBehaviour {
   Check(g.phase==DesignPrototype.Phase.Brief,"Design accessible without Drawing completion");yield return Shot("02-Design-brief");
   g.Begin();g.teacher.enabled=false;yield return null;
   Check(g.tables.Count==3&&g.teacher.head&&g.workshop,"Cover, professor and physical workshop created");
+  Check(Resources.Load<GameObject>("Professor/Head")&&Resources.Load<GameObject>("Professor/Body")&&g.teacher.head.GetComponentsInChildren<MeshRenderer>().Length>=6,"Blender-authored professor assets load in the runtime scene");
+  var skinMaterial=Resources.Load<Material>("Professor/Skin");Check(skinMaterial&&skinMaterial.mainTexture&&skinMaterial.GetTexture("_BumpMap"),"Professor skin uses imported color and normal maps");
   Place(g.tables[0]);g.SetCrouch(true);g.SetCrouch(false);Check(g.crouching,"Cannot stand through lowered table");
   g.player.Move(Vector3.back*3);Check(g.player.transform.position.z<g.tables[0].z-1.3f,"Crouched player exits table opening");g.SetCrouch(false);Check(!g.crouching,"Can stand after exit");
   AtStation(0);Check(g.CanWork(),"Close aligned cutting station is usable");
@@ -56,6 +58,8 @@ public class DesignQA:MonoBehaviour {
   Place(g.tables[0]);g.SetCrouch(true);Teacher(g.tables[0]+Vector3.up*4.7f,Vector3.back);g.teacher.ForceChase();g.teacher.enabled=true;yield return null;
   Check(g.teacher.mode==DesignSpider.Mode.Probe,"Table gives a committed probe instead of immediate capture");
   g.eye.transform.LookAt(g.tables[0]+new Vector3(0,.7f,-1.5f));yield return new WaitForSeconds(1);yield return Shot("04-Under-table-probe");
+  var neckMesh=g.teacher.GetComponentInChildren<ProfessorNeck>().GetComponent<MeshFilter>().sharedMesh;
+  Check(neckMesh.bounds.size.sqrMagnitude>1&&neckMesh.bounds.size.sqrMagnitude<150,"Continuous neck has valid bounds during table probe");
   Place(g.tables[0]+Vector3.back*4);g.SetCrouch(false);yield return new WaitForSeconds(1.9f);Check(g.phase==DesignPrototype.Phase.Playing&&g.teacher.mode==DesignSpider.Mode.Recover,"Leaving opposite side evades committed attack");
   Place(new Vector3(0,0,-5));Teacher(new Vector3(0,4.7f,-5),Vector3.back);g.teacher.ForceChase();g.teacher.enabled=true;yield return new WaitForSeconds(2.5f);Check(g.phase==DesignPrototype.Phase.Caught,"Remaining in visible reach is captured");yield return Shot("05-Caught");
   g=DesignPrototype.Launch();g.automation=true;yield return null;Check(g.stage==0&&g.phase==DesignPrototype.Phase.Brief,"Retry resets work and returns to briefing");

@@ -1,0 +1,55 @@
+Professor model integration — 2026-10-08
+Unity 6000.0.34f1 Editor Play Mode
+
+PASS Design accessible without Drawing completion
+PASS Cover, professor and physical workshop created
+PASS Blender-authored professor assets load in the runtime scene
+PASS Professor skin uses imported color and normal maps
+PASS Cannot stand through lowered table
+PASS Crouched player exits table opening
+PASS Can stand after exit
+PASS Close aligned cutting station is usable
+PASS Back-facing interaction rejected
+PASS Back-facing work cannot advance progress
+PASS Movement interrupts work immediately
+PASS Old remote 2m interaction rejected
+PASS Partial cutting advances
+PASS Leaving retains progress but blocks remote work
+PASS Pause blocks production
+PASS One cut completes one physical action
+PASS Holding through a cut cannot skip remaining actions
+PASS Work audio does not move the scene root
+PASS Ordered workstation 0 completes after its distinct actions
+PASS Ordered workstation 1 completes after its distinct actions
+PASS Ordered workstation 2 completes after its distinct actions
+PASS Finished work submits and ends pursuit
+PASS Four seconds depletes sprint
+PASS Exhaustion does not flicker sprint on next frame
+PASS Stamina waits before regeneration
+PASS Recovered stamina permits sprint again
+PASS Front-facing player visible
+PASS Player behind teacher is not automatically detected
+PASS Sight range limited
+PASS Tall screen blocks line of sight
+PASS Distant sound does not reveal a target
+PASS Nearby sound investigates source rather than live player
+PASS Ceiling route clears full-height screens
+PASS First detection supplies extended warning
+PASS Visible target enters chase
+PASS Chase moves at the intended fast pace
+PASS Pause freezes pursuit
+PASS Second encounter warns again
+PASS Breaking sight during warning preserves last known position
+PASS Table gives a committed probe instead of immediate capture
+PASS Continuous neck has valid bounds during table probe
+PASS Leaving opposite side evades committed attack
+PASS Remaining in visible reach is captured
+PASS Retry resets work and returns to briefing
+PASS Return restores assignment menu
+PASS Drawing still starts after Design
+DONE
+
+Visual checks: standalone Blender portrait; Unity under-table close view; classroom silhouette.
+Blender 5.1.1 source reopened successfully, reference and all three texture images packed.
+Current art is a stylized fictional character based on the documented portrait reference.
+No standalone Mac build or measured frame-time benchmark was produced for this change.

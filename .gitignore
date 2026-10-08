@@ -27,3 +27,6 @@ MenuQA.request
 MenuQA-output/
 
 DrawingQA-output/
+
+# Blender creates local revision backups during reference-model iteration.
+*.blend1

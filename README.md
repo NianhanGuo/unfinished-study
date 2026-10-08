@@ -5,6 +5,16 @@
 
 封面使用实时缓慢环绕镜头与独立的冷暖灯光；进入 Drawing 时恢复原来的玩家镜头与照明。作业卡片使用游戏内渲染的实景图片。Design 准备页先展示工作室空间，移动与操作提示在进入教室后短暂出现。
 
+## 2026-10-08：参考图驱动的老师模型
+
+以 `References/Max-Planck-1933-reference.jpg` 的秃顶、眼窝、颧骨和细框眼镜为结构参考，创建虚构老师的 Blender 头部与西装肩背。参考来源与使用方式见 `References/README.md`。当前风格为半写实的风格化模型，尚非扫描级人物。
+
+- 可编辑源文件：`Blender/Professor/Professor.blend`；独立渲染：`Blender/Professor/Professor-portrait.png`。
+- 建模脚本：`Tools/build_professor.py`（Blender 后台运行）。导出原始几何到 `Assets/Study/ArtProfessor/Professor.meshdata.json`；Unity 编辑器菜单 `Study > Import Professor Artwork` 生成可直接使用的 Mesh、Material 和 Prefab。
+- 游戏运行时直接加载 `Resources/Professor/Head` 与 `Body`，不解析源 JSON，也不依赖 Blender 安装。
+- 老师头部包括连续面部、包裹眼球的眼睑、耳廓、鼻梁、嘴唇、后退的发际线，以及镜框、鼻托和镜腿。皮肤使用独立颜色/法线纹理；羊毛、棉布与金属分开处理。
+- 连续动态颈部网格替换拼接圆柱；关节肢体有渐细轮廓和袖口褶皱。追逐状态和命中窗口保持现有规则。
+
 ## 2026-10-06：注意力与追逐改进
 
 - Drawing：观察缩至 0.9 秒，记忆保持 5 秒；三幅有效绘制时间为 26 / 28 / 30 秒。新增观察圆环、遮挡和完成提示，骨架头部或胸部受光都能暂停，近距离接触留出 0.22 秒救场判定。

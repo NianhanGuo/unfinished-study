@@ -4,7 +4,7 @@ public class DesignSpider:MonoBehaviour {
  public enum Mode { Patrol, Warning, Chase, Search, Probe, Recover }
  public Mode mode;public Transform head;public Vector3 lastSeen;public bool IsThreat=>mode!=Mode.Patrol&&mode!=Mode.Recover;
  public string Status=>mode==Mode.Warning?"HE SAW YOU — RUN":mode==Mode.Probe?"MOVE. HE'S LOOKING UNDER.":mode==Mode.Search?"HE'S SEARCHING.":"YOU'RE NEXT.";
- DesignPrototype g;Transform neck,neckB,neckC,tie;bool probingTable;readonly List<Transform> limbs=new List<Transform>();
+ DesignPrototype g;ProfessorNeck neck;Transform tie;bool probingTable;readonly List<Transform> limbs=new List<Transform>();
  List<Vector3> path;int node,patrol;float timer,lost,repath,step,clock,suspicion,retreatClock;bool warnedOnce,visible;
  Vector3 probeStart,probeTarget,travelDirection=Vector3.back,searchForward=Vector3.back,inspectionPoint;AudioSource sound;AudioClip tick,alert,stretch;
  readonly Vector3[] feet=new Vector3[8],footStart=new Vector3[8],footGoal=new Vector3[8];readonly float[] footPhase=new float[8];
@@ -13,31 +13,15 @@ public class DesignSpider:MonoBehaviour {
  readonly Vector3[] patrolPoints={new Vector3(-7,4.7f,7),new Vector3(7,4.7f,9),new Vector3(7,4.7f,-9),new Vector3(-7,4.7f,-9)};
  public void Initialize(DesignPrototype game,Material skin,Material suit,Material shirt){
   g=game;var root=transform;root.rotation=Quaternion.LookRotation(Vector3.back);
-  DesignPrototype.Shape("Enormous tailored abdomen",root,PrimitiveType.Sphere,new Vector3(0,.05f,.45f),new Vector3(1.9f,.95f,2.1f),suit);
-  DesignPrototype.Shape("Suit jacket",root,PrimitiveType.Cube,new Vector3(0,-.25f,-.25f),new Vector3(1.38f,.52f,1.52f),suit);
-  DesignPrototype.Shape("White shirt",root,PrimitiveType.Cube,new Vector3(0,-.57f,-.5f),new Vector3(.43f,.06f,.85f),shirt);
-  tie=DesignPrototype.Shape("Hanging tie",root,PrimitiveType.Cube,new Vector3(0,-.95f,-.4f),new Vector3(.13f,.75f,.07f),suit).transform;
-  neck=DesignPrototype.Shape("Extending neck",null,PrimitiveType.Cylinder,Vector3.zero,Vector3.one,skin).transform;neck.SetParent(root,true);
-  neckB=DesignPrototype.Shape("Neck / bend",root,PrimitiveType.Cylinder,Vector3.zero,Vector3.one,skin).transform;
-  neckC=DesignPrototype.Shape("Neck / reach",root,PrimitiveType.Cylinder,Vector3.zero,Vector3.one,skin).transform;
-  head=new GameObject("Bald professor head").transform;head.SetParent(root);head.position=root.position+Vector3.down;DesignFace.Build(head,skin);
-  for(int side=-1;side<=1;side+=2){
-   DesignPrototype.Shape("Thin hair at temples",head,PrimitiveType.Sphere,new Vector3(side*.26f,.13f,-.025f),new Vector3(.06f,.3f,.39f),suit);
-   DesignPrototype.Shape("Ear",head,PrimitiveType.Sphere,new Vector3(side*.29f,-.03f,0),new Vector3(.09f,.2f,.12f),skin);
-   DesignPrototype.Shape("Recessed eye",head,PrimitiveType.Sphere,new Vector3(side*.125f,.035f,.236f),new Vector3(.07f,.016f,.012f),suit);
-   for(int rim=0;rim<16;rim++){
-    float t=rim*Mathf.PI*2/16,u=(rim+1)*Mathf.PI*2/16;
-    Vector3 a=new Vector3(side*.145f+Mathf.Cos(t)*.12f,.03f+Mathf.Sin(t)*.09f,.30f),b=new Vector3(side*.145f+Mathf.Cos(u)*.12f,.03f+Mathf.Sin(u)*.09f,.30f);
-    var r=DesignPrototype.Shape("Round spectacle rim",head,PrimitiveType.Cylinder,(a+b)*.5f,new Vector3(.012f,(b-a).magnitude*.5f,.012f),suit);r.transform.localRotation=Quaternion.FromToRotation(Vector3.up,b-a);
-   }
-  }
-  DesignPrototype.Shape("Glasses bridge",head,PrimitiveType.Cube,new Vector3(0,.04f,.30f),new Vector3(.06f,.018f,.02f),suit);
-  DesignPrototype.Shape("Disapproving mouth",head,PrimitiveType.Cube,new Vector3(0,-.31f,.232f),new Vector3(.105f,.008f,.008f),suit);
-  for(int side=-1;side<=1;side+=2){var lapel=DesignPrototype.Shape("Jacket lapel",root,PrimitiveType.Cube,new Vector3(side*.32f,-.6f,-.45f),new Vector3(.23f,.06f,.85f),suit);lapel.transform.localRotation=Quaternion.Euler(0,side*22,0);}
-  for(int side=-1;side<=1;side+=2){
-   DesignPrototype.Shape("Shirt collar",root,PrimitiveType.Cube,new Vector3(side*.19f,-.58f,-.77f),new Vector3(.19f,.08f,.24f),shirt).transform.localRotation=Quaternion.Euler(0,side*30,0);
-  }
-  for(int i=0;i<16;i++)limbs.Add(DesignPrototype.Shape("Articulated suit limb "+i,root,PrimitiveType.Cylinder,Vector3.zero,Vector3.one,suit).transform);
+  var bodyAsset=Resources.Load<GameObject>("Professor/Body");
+  if(!bodyAsset)throw new System.InvalidOperationException("Professor body asset missing. Import Professor Artwork first.");
+  Instantiate(bodyAsset,root,false);
+  Material wool=Resources.Load<Material>("Professor/Wool"),flesh=Resources.Load<Material>("Professor/Skin");
+  var neckObject=new GameObject("Professor / continuous skin neck");neckObject.transform.SetParent(root,false);neck=neckObject.AddComponent<ProfessorNeck>();neck.Initialize(flesh);
+  tie=DesignPrototype.Shape("Hanging tie",root,PrimitiveType.Cube,new Vector3(0,-.78f,.6f),new Vector3(.10f,.49f,.045f),Resources.Load<Material>("Professor/Tie")??wool).transform;
+  head=new GameObject("Bald professor head").transform;head.SetParent(root);head.position=root.position+Vector3.down;DesignFace.Build(head,flesh);
+  var art=gameObject.AddComponent<ProfessorLimbs>();
+  for(int i=0;i<16;i++)limbs.Add(art.Segment(root,i,wool));
   sound=gameObject.AddComponent<AudioSource>();sound.spatialBlend=1;sound.minDistance=2;sound.maxDistance=28;tick=StudioAudio.Foot();alert=DesignPrototype.Tone(260,.65f);stretch=StudioAudio.Neck();
   lastSeen=transform.position+Vector3.back*4;for(int i=0;i<8;i++){feet[i]=FootHome(i);footGoal[i]=feet[i];footPhase[i]=1;}Animate();
  }
@@ -107,14 +91,12 @@ public class DesignSpider:MonoBehaviour {
  Vector3 FootHome(int i){float side=i<4?-1:1;float z=(i%4-1.5f)*1.15f;return transform.position+transform.rotation*new Vector3(side*2.1f,.78f,z);}
  void Animate(){
   transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(travelDirection),Time.deltaTime*(mode==Mode.Warning?5:3));
-  Vector3 rest=transform.position+new Vector3(0,-1,-.5f),target=rest;
+  Vector3 rest=transform.position+Vector3.down+Facing*.48f,target=rest;
   if(mode==Mode.Probe){float t=2.65f-timer;target=t<1?Vector3.Lerp(rest,probeStart,t):Vector3.Lerp(probeStart,probeTarget,Mathf.Clamp01((t-1)/1.1f));}
   head.position=Vector3.MoveTowards(head.position,target,Time.deltaTime*8+ .001f);Vector3 gaze=g.phase==DesignPrototype.Phase.Complete?g.stations[3]+Vector3.up*1.4f:mode==Mode.Probe?probeTarget:(visible&&(mode==Mode.Warning||mode==Mode.Chase)?g.eye.transform.position:transform.position+Facing*5+Vector3.down*2.1f);
   Vector3 look=gaze-head.position;if(look.sqrMagnitude>.01f)head.rotation=Quaternion.Slerp(head.rotation,Quaternion.LookRotation(look),Time.deltaTime*7);
   bool bent=mode==Mode.Probe&&probingTable;
-  neckB.gameObject.SetActive(bent);neckC.gameObject.SetActive(bent);
-  if(bent){Vector3 above=probeStart+Vector3.up*1.4f;Segment(neck,transform.position+Vector3.down*.3f,above,.22f);Segment(neckB,above,probeStart,.21f);Segment(neckC,probeStart,head.position,.2f);}
-  else Segment(neck,transform.position+Vector3.down*.3f,head.position,.22f);
+  neck.Pose(transform.position+Facing*.70f+Vector3.down*.30f,probeStart+Vector3.up*1.7f,probeStart,head,bent);
   tie.localRotation=Quaternion.Euler(Mathf.Sin(clock*3)*12,0,Mathf.Sin(clock*2)*9);
   for(int i=0;i<8;i++){
    float side=i<4?-1:1;int k=i%4;Vector3 home=FootHome(i);
