@@ -4,7 +4,7 @@ public class DesignSpider:MonoBehaviour {
  public enum Mode { Patrol, Warning, Chase, Search, Probe, Recover }
  public Mode mode;public Transform head;public Vector3 lastSeen;public bool IsThreat=>mode!=Mode.Patrol&&mode!=Mode.Recover;
  public string Status=>mode==Mode.Warning?"HE SAW YOU — RUN":mode==Mode.Probe?"MOVE. HE'S LOOKING UNDER.":mode==Mode.Search?"HE'S SEARCHING.":"YOU'RE NEXT.";
- DesignPrototype g;ProfessorNeck neck;Transform tie;bool probingTable;readonly List<Transform> limbs=new List<Transform>();
+ DesignPrototype g;ProfessorNeck neck;Transform tie;ProfessorLimbs limbArt;bool probingTable;readonly List<Transform> limbs=new List<Transform>();
  List<Vector3> path;int node,patrol;float timer,lost,repath,step,clock,suspicion,retreatClock;bool warnedOnce,visible;
  Vector3 probeStart,probeTarget,travelDirection=Vector3.back,searchForward=Vector3.back,inspectionPoint;AudioSource sound;AudioClip tick,alert,stretch;
  readonly Vector3[] feet=new Vector3[8],footStart=new Vector3[8],footGoal=new Vector3[8];readonly float[] footPhase=new float[8];
@@ -16,11 +16,11 @@ public class DesignSpider:MonoBehaviour {
   var bodyAsset=Resources.Load<GameObject>("Professor/Body");
   if(!bodyAsset)throw new System.InvalidOperationException("Professor body asset missing. Import Professor Artwork first.");
   Instantiate(bodyAsset,root,false);
-  Material wool=Resources.Load<Material>("Professor/Wool"),flesh=Resources.Load<Material>("Professor/Skin");
+  Material wool=Resources.Load<Material>("Professor/Wool"),flesh=Resources.Load<Material>("Professor/SkinDetail");
   var neckObject=new GameObject("Professor / continuous skin neck");neckObject.transform.SetParent(root,false);neck=neckObject.AddComponent<ProfessorNeck>();neck.Initialize(flesh);
   tie=DesignPrototype.Shape("Hanging tie",root,PrimitiveType.Cube,new Vector3(0,-.78f,.6f),new Vector3(.10f,.49f,.045f),Resources.Load<Material>("Professor/Tie")??wool).transform;
   head=new GameObject("Bald professor head").transform;head.SetParent(root);head.position=root.position+Vector3.down;DesignFace.Build(head,flesh);
-  var art=gameObject.AddComponent<ProfessorLimbs>();
+  var art=gameObject.AddComponent<ProfessorLimbs>();limbArt=art;
   for(int i=0;i<16;i++)limbs.Add(art.Segment(root,i,wool));
   sound=gameObject.AddComponent<AudioSource>();sound.spatialBlend=1;sound.minDistance=2;sound.maxDistance=28;tick=StudioAudio.Foot();alert=DesignPrototype.Tone(260,.65f);stretch=StudioAudio.Neck();
   lastSeen=transform.position+Vector3.back*4;for(int i=0;i<8;i++){feet[i]=FootHome(i);footGoal[i]=feet[i];footPhase[i]=1;}Animate();
@@ -89,6 +89,7 @@ public class DesignSpider:MonoBehaviour {
   Animate();
  }
  Vector3 FootHome(int i){float side=i<4?-1:1;float z=(i%4-1.5f)*1.15f;return transform.position+transform.rotation*new Vector3(side*2.1f,.78f,z);}
+ public void RefreshArtPose(){head.position=transform.position+Vector3.down+Facing*.48f;head.rotation=Quaternion.LookRotation(Facing);for(int i=0;i<8;i++){feet[i]=FootHome(i);footPhase[i]=1;}Animate();}
  void Animate(){
   transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(travelDirection),Time.deltaTime*(mode==Mode.Warning?5:3));
   Vector3 rest=transform.position+Vector3.down+Facing*.48f,target=rest;
@@ -96,7 +97,7 @@ public class DesignSpider:MonoBehaviour {
   head.position=Vector3.MoveTowards(head.position,target,Time.deltaTime*8+ .001f);Vector3 gaze=g.phase==DesignPrototype.Phase.Complete?g.stations[3]+Vector3.up*1.4f:mode==Mode.Probe?probeTarget:(visible&&(mode==Mode.Warning||mode==Mode.Chase)?g.eye.transform.position:transform.position+Facing*5+Vector3.down*2.1f);
   Vector3 look=gaze-head.position;if(look.sqrMagnitude>.01f)head.rotation=Quaternion.Slerp(head.rotation,Quaternion.LookRotation(look),Time.deltaTime*7);
   bool bent=mode==Mode.Probe&&probingTable;
-  neck.Pose(transform.position+Facing*.70f+Vector3.down*.30f,probeStart+Vector3.up*1.7f,probeStart,head,bent);
+  neck.Pose(transform.position+Facing*.10f+Vector3.down*.30f,probeStart+Vector3.up*1.7f,probeStart,head,bent);
   tie.localRotation=Quaternion.Euler(Mathf.Sin(clock*3)*12,0,Mathf.Sin(clock*2)*9);
   for(int i=0;i<8;i++){
    float side=i<4?-1:1;int k=i%4;Vector3 home=FootHome(i);
@@ -106,7 +107,7 @@ public class DesignSpider:MonoBehaviour {
    if(Vector3.Distance(feet[i],home)>3){feet[i]=home;footPhase[i]=1;}
    Vector3 a=transform.position+transform.rotation*new Vector3(side*.6f,0,(k-1.5f)*.65f);
    Vector3 b=Vector3.Lerp(a,feet[i],.55f)+Vector3.down*.23f;
-   Segment(limbs[i*2],a,b,.14f);Segment(limbs[i*2+1],b,feet[i],.065f);
+   Segment(limbs[i*2],a,b,.18f);Segment(limbs[i*2+1],b,feet[i],.13f);limbArt.PoseJoint(i,b);
   }
  }
 }

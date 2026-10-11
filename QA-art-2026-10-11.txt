@@ -1,0 +1,87 @@
+Art/material integration — 2026-10-11
+Unity 6000.0.34f1 Editor Play Mode, 1440 x 900 captures.
+
+DesignQA: 48 PASS, 0 FAIL
+PASS Design accessible without Drawing completion
+PASS Cover, professor and physical workshop created
+PASS Blender-authored professor assets load in the runtime scene
+PASS Professor skin uses imported color and normal maps
+PASS Authored furniture and anatomical work hands load
+PASS Steel and paper use distinct physical material responses
+PASS Cannot stand through lowered table
+PASS Crouched player exits table opening
+PASS Can stand after exit
+PASS Close aligned cutting station is usable
+PASS Back-facing interaction rejected
+PASS Back-facing work cannot advance progress
+PASS Movement interrupts work immediately
+PASS Old remote 2m interaction rejected
+PASS Partial cutting advances
+PASS Leaving retains progress but blocks remote work
+PASS Pause blocks production
+PASS One cut completes one physical action
+PASS Holding through a cut cannot skip remaining actions
+PASS Work audio does not move the scene root
+PASS Ordered workstation 0 completes after its distinct actions
+PASS Ordered workstation 1 completes after its distinct actions
+PASS Ordered workstation 2 completes after its distinct actions
+PASS Finished work submits and ends pursuit
+PASS Four seconds depletes sprint
+PASS Exhaustion does not flicker sprint on next frame
+PASS Stamina waits before regeneration
+PASS Recovered stamina permits sprint again
+PASS Front-facing player visible
+PASS Player behind teacher is not automatically detected
+PASS Sight range limited
+PASS Tall screen blocks line of sight
+PASS Distant sound does not reveal a target
+PASS Nearby sound investigates source rather than live player
+PASS Ceiling route clears full-height screens
+PASS First detection supplies extended warning
+PASS Visible target enters chase
+PASS Chase moves at the intended fast pace
+PASS Pause freezes pursuit
+PASS Second encounter warns again
+PASS Breaking sight during warning preserves last known position
+PASS Table gives a committed probe instead of immediate capture
+PASS Continuous neck has valid bounds during table probe
+PASS Leaving opposite side evades committed attack
+PASS Remaining in visible reach is captured
+PASS Retry resets work and returns to briefing
+PASS Return restores assignment menu
+PASS Drawing still starts after Design
+DONE
+
+
+MenuQA: 12 PASS, 0 FAIL
+PASS Cover starts with cinematic view and no player board
+PASS Cover camera visibly orbits the studio
+PASS Cover camera does not move gameplay body
+PASS Separate assignment selection page opens
+PASS Assignment page returns to cover
+PASS Drawing opens its short physical note
+PASS Drawing restores first-person camera pose
+PASS Cover light rig is disabled and player lamp restored
+PASS Drawing gameplay remains available
+PASS Design opens its concise preparation page
+PASS Design briefing restores player eye position on entry
+PASS Return from Design resets the cover correctly
+DONE
+
+
+Additional validation:
+- Blender 5.1.1 regenerated the professor source/portrait and workshop source/inspection render successfully.
+- Workshop source packs all 15 material images. Mesh JSON has valid indices, matching vertex/normal/UV counts and finite values in all seven asset groups.
+- Both Python generators passed Python syntax parsing.
+- Reviewed the actual editor captures: work hands/cuffs, thin stock and rounded cutter bed, printed mat, cork scale, furniture, professor face and continuous neck during probe. Reviewed the menu background plate separately.
+- Source whitespace check passed for C#, Python, ShaderLab and Markdown.
+- No new C# compile exceptions or shader errors in the final editor run log tail.
+
+Scope / limitations:
+- Automated tests place actors and set progress deliberately to cover interaction and pursuit states. Screenshots are real game renders under those test conditions, not an uninterrupted manual playthrough.
+- Existing cover collision shapes are retained; imported furniture adds visual detail without adding collision barriers.
+- Drawing entry/return was verified here. The full historical Drawing regression suite was not rerun for these Design artwork changes.
+- No new standalone Mac build or frame-rate benchmark was produced in this pass.
+- Current assets remain stylized. Finger manipulation, full creature rigging and more detailed room dressing remain future art work.
+
+Evidence: PreviewsArt-2026-10-11/; Blender/Professor/Professor-portrait.png; Blender/Workshop/Worktable.png.

@@ -15,6 +15,7 @@ def material(name,c,rough,metal=0):
  bs=next(n for n in m.node_tree.nodes if n.type=='BSDF_PRINCIPLED');bs.inputs['Base Color'].default_value=(*c,1);bs.inputs['Roughness'].default_value=rough;bs.inputs['Metallic'].default_value=metal
  mats[name]=m;return m
 skin=material('Skin',(.43,.295,.215),.56);lips=material('Lips',(.37,.235,.185),.67);crease=material('Crease',(.075,.033,.028),.76)
+earSkin=material('SkinDetail',(.233,.155,.106),.78)
 white=material('Sclera',(.59,.55,.46),.25);iris=material('Iris',(.08,.10,.09),.3);pupil=material('Pupil',(.012,.013,.012),.2)
 frame=material('Bronze',(.20,.16,.095),.31,.82);hair=material('Hair',(.026,.030,.029),.87)
 wool=material('Wool',(.048,.055,.059),.83);shirt=material('Cotton',(.61,.56,.44),.76);tie=material('Tie',(.105,.035,.026),.54);seam=material('Seam',(.019,.023,.024),.88)
@@ -126,12 +127,14 @@ for side in [-1,1]:
    a=k*2*math.pi/48;z=.013+math.cos(a)*.099*t;x=side*(.211+math.sin(a)*.044*t+.021*t);y=.006-.039*math.sin(t*math.pi*.82)
    ev.append((x,y,z));eu.append((k/48,t))
    if r<14 and k<48:q=r*49+k;ef.append((q,q+1,q+50,q+49))
- mesh('Ear / concha shell',ev,ef if side>0 else [f[::-1] for f in ef],skin,eu)
+ mesh('Ear / concha shell',ev,ef if side>0 else [f[::-1] for f in ef],earSkin,eu)
  points=[]
  for k in range(65):
   a=k*2*math.pi/64;points.append((side*(.232+math.sin(a)*.044),-.02,.013+math.cos(a)*.099))
- tube('Ear / rolled helix',points,.007,skin,10)
- ellipsoid('Ear canal shadow',(side*.233,-.031,-.007),(.012,.003,.021),crease,24,16)
+ tube('Ear / rolled helix',points,.0055,earSkin,10)
+ tube('Ear / antihelix',[(side*.228,-.039,-.042),(side*.243,-.043,-.005),(side*.242,-.039,.028),(side*.229,-.032,.052)],.0045,earSkin,8)
+ tube('Ear / upper fork',[(side*.242,-.039,.028),(side*.258,-.032,.056)],.0038,earSkin,8)
+ ellipsoid('Ear canal shadow',(side*.233,-.031,-.007),(.006,.002,.010),crease,24,16)
  # Spectacles stand clear of the nose and lids, with real bridge, pads, hinges and arms.
  points=[]
  for k in range(80):
@@ -167,18 +170,9 @@ for side in [-1,1]:
  for i in range(240):
   a=side*(1.03+random.random()*1.75);z=.10+random.random()*.245;w,d=dims(z);pts=[]
   for k in range(5):
-   zz=z-.012*k;ww,dd=dims(zz);aa=a+side*.018*k;pts.append((math.sin(aa)*(ww+.003),.028-math.cos(aa)*(dd+.003),zz))
-  tube('Temple hair',pts,.0006,hair,4)
-# Cropped hair mass follows the scalp; a receding hairline exposes the crown.
-for side in [-1,1]:
- vv=[];ff=[]
- for j in range(30):
-  t=j/29;z=-.025+.365*t
-  for i in range(65):
-   u=i/64;edge=1.10+.34*t+.08*math.sin(t*7);a=side*(edge+u*(math.pi-edge));w,d=dims(z)
-   vv.append((math.sin(a)*(w+.0017),.028-math.cos(a)*(d+.0017),z))
-   if j<29 and i<64:q=j*65+i;ff.append((q,q+1,q+66,q+65))
- mesh('Cropped receding hair',vv,ff if side>0 else [f[::-1] for f in ff],hair)
+   zz=z-.0035*k;ww,dd=dims(zz);aa=a+side*.006*k;pts.append((math.sin(aa)*(ww+.003),.028-math.cos(aa)*(dd+.003),zz))
+  tube('Temple hair',pts,.00035,hair,4)
+# Cropped hair is blended into the scalp texture; only short silhouette wisps use geometry.
 # Shorten vertical silhouette, preserving all feature relationships.
 for obj in groups['Head']:
  obj.location.z*=.88
@@ -222,7 +216,16 @@ col[:,:,:3]+=cheek[:,:,None]*np.array([.045,-.009,-.008])
 eyeage=np.exp(-((abs(x)-.10)/.07)**2-((z+.003)/.034)**2)*front
 col[:,:,:3]-=eyeage[:,:,None]*np.array([.065,.056,.039])
 spots=(np.sin(xx*.119+np.cos(yy*.052)) * np.sin(yy*.127+xx*.031)> .94).astype(float)*front*np.clip((z-.11)*5,0,1)
-col[:,:,:3]-=spots[:,:,None]*np.array([.040,.029,.022]);skinmap=save_img('ProfessorSkin_BaseColor',np.clip(col,0,1))
+col[:,:,:3]-=spots[:,:,None]*np.array([.040,.029,.022])
+def fade(t):
+ t=np.clip(t,0,1);return t*t*(3-2*t)
+theta=np.minimum(a,2*math.pi-a);edge=1.06+.39*np.clip((z+.025)/.365,0,1)+.026*np.sin(z*71)
+hairmask=fade((theta-edge)/.12)*fade((z+.055)/.065)*fade((.35-z)/.07)
+haircolor=np.array([.105,.11,.105])+(noise[:,:,None]-.5)*.024
+col[:,:,:3]=col[:,:,:3]*(1-hairmask[:,:,None]*.88)+haircolor*hairmask[:,:,None]*.88
+skinmap=save_img('ProfessorSkin_BaseColor',np.clip(col,0,1))
+surface=np.zeros((size,size,4));surface[:,:,3]=.19+.09*np.exp(-((z-.22)/.18)**2)*front+.13*np.exp(-(x/.055)**2-((z+.05)/.15)**2)*front-.1*hairmask
+save_img('ProfessorSkin_Surface',surface,True)
 bs=next(n for n in skin.node_tree.nodes if n.type=='BSDF_PRINCIPLED');tn=skin.node_tree.nodes.new('ShaderNodeTexImage');tn.image=skinmap;skin.node_tree.links.new(tn.outputs['Color'],bs.inputs['Base Color'])
 # normal maps generated from subtle height, interpreted identically in Blender and Unity.
 for name,height,strength,mat in [('ProfessorSkin_Normal',noise,.07,skin),('ProfessorWool_Normal',(np.sin(xx*math.pi*.5)+np.sin(yy*math.pi*.5+xx*.015))*.5,.16,wool)]:

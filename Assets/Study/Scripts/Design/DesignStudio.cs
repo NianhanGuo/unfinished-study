@@ -13,7 +13,7 @@ public static class DesignStudio {
   root=new GameObject("Studio / material details").transform;root.SetParent(g.transform);ink=Mat("Charcoal marks",new Color(.13f,.15f,.14f));tape=Mat("Masking tape",new Color(.56f,.48f,.31f));
   Grain(wood,27,.15f,1);Grain(wall,91,.11f,0);Grain(paper,8,.08f,0);skin.SetFloat("_Glossiness",.26f);metal.SetFloat("_Glossiness",.12f);
   var floor=Mat("Paint-spattered oak",new Color(.23f,.18f,.13f));Grain(floor,39,.12f,1);floor.mainTextureScale=new Vector2(11,14);g.transform.Find("Floor").GetComponent<Renderer>().sharedMaterial=floor;
-  for(int x=-10;x<=10;x++)Box("Floorboard seam",new Vector3(x,.004f,0),new Vector3(.014f,.008f,27.8f),ink);
+  // Board joints are authored in the floor material, with staggered ends.
   for(int z=-12;z<=12;z+=6){Box("Ceiling crossbeam",new Vector3(0,5.3f,z+1.3f),new Vector3(21.8f,.32f,.22f),metal);}
   for(int x=-9;x<=9;x+=18)Box("Ceiling service pipe",new Vector3(x,5.22f,0),new Vector3(.08f,.09f,27),metal);
   foreach(var p in g.stations){

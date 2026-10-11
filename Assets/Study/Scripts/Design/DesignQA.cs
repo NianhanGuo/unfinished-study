@@ -20,6 +20,9 @@ public class DesignQA:MonoBehaviour {
   Check(g.tables.Count==3&&g.teacher.head&&g.workshop,"Cover, professor and physical workshop created");
   Check(Resources.Load<GameObject>("Professor/Head")&&Resources.Load<GameObject>("Professor/Body")&&g.teacher.head.GetComponentsInChildren<MeshRenderer>().Length>=6,"Blender-authored professor assets load in the runtime scene");
   var skinMaterial=Resources.Load<Material>("Professor/Skin");Check(skinMaterial&&skinMaterial.mainTexture&&skinMaterial.GetTexture("_BumpMap"),"Professor skin uses imported color and normal maps");
+  Check(Resources.Load<GameObject>("Workshop/Worktable")&&Resources.Load<GameObject>("Workshop/LeftHand")&&Resources.Load<GameObject>("Workshop/RightHand"),"Authored furniture and anatomical work hands load");
+  var steel=Resources.Load<Material>("Workshop/Steel");var paper=Resources.Load<Material>("Workshop/Paper");
+  Check(steel&&paper&&steel.GetFloat("_Metallic")>.8f&&paper.GetFloat("_Metallic")==0&&paper.GetTexture("_BumpMap"),"Steel and paper use distinct physical material responses");
   Place(g.tables[0]);g.SetCrouch(true);g.SetCrouch(false);Check(g.crouching,"Cannot stand through lowered table");
   g.player.Move(Vector3.back*3);Check(g.player.transform.position.z<g.tables[0].z-1.3f,"Crouched player exits table opening");g.SetCrouch(false);Check(!g.crouching,"Can stand after exit");
   AtStation(0);Check(g.CanWork(),"Close aligned cutting station is usable");
@@ -63,7 +66,7 @@ public class DesignQA:MonoBehaviour {
   Place(g.tables[0]+Vector3.back*4);g.SetCrouch(false);yield return new WaitForSeconds(1.9f);Check(g.phase==DesignPrototype.Phase.Playing&&g.teacher.mode==DesignSpider.Mode.Recover,"Leaving opposite side evades committed attack");
   Place(new Vector3(0,0,-5));Teacher(new Vector3(0,4.7f,-5),Vector3.back);g.teacher.ForceChase();g.teacher.enabled=true;yield return new WaitForSeconds(2.5f);Check(g.phase==DesignPrototype.Phase.Caught,"Remaining in visible reach is captured");yield return Shot("05-Caught");
   g=DesignPrototype.Launch();g.automation=true;yield return null;Check(g.stage==0&&g.phase==DesignPrototype.Phase.Brief,"Retry resets work and returns to briefing");
-  g.Begin();g.teacher.enabled=false;Place(new Vector3(0,0,-8));g.eye.transform.LookAt(new Vector3(0,2.8f,4));g.teacher.transform.position=new Vector3(0,4.7f,-1);g.teacher.head.LookAt(g.eye.transform);yield return Shot("06-Classroom");
+  g.Begin();g.teacher.enabled=false;Place(new Vector3(0,0,-8));g.eye.transform.LookAt(new Vector3(0,2.8f,4));g.teacher.transform.position=new Vector3(0,4.7f,-1);g.teacher.RefreshArtPose();yield return Shot("06-Classroom");
   AtStation(0);g.working=true;yield return Shot("07-Physical-work");g.working=false;
   g.ReturnToMenu();yield return new WaitForSeconds(.8f);var drawing=FindFirstObjectByType<StudyGame>();Check(drawing&&drawing.phase==StudyGame.Phase.Title,"Return restores assignment menu");
   if(drawing){drawing.automation=true;drawing.StartStudy();yield return null;Check(drawing.phase==StudyGame.Phase.Playing,"Drawing still starts after Design");}

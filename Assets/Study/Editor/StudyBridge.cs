@@ -16,6 +16,7 @@ using System.IO;
    if(cmd=="hands")StudioRealism.RefreshHands();
    if(cmd=="build")StudioBuilder.BuildMac();
    if(cmd=="professorassets")ProfessorAssetBuilder.Build();
+   if(cmd=="workshopassets")WorkshopAssetBuilder.Build();
    if(cmd=="capture")Capture();
    if(cmd=="anatomy")StudyAnatomyPreview.Capture();
    if(cmd=="menuqa"){SetGameSize();EditorSceneManager.OpenScene("Assets/Study/Studio.unity");File.WriteAllText("MenuQA.request","run");EditorApplication.ExecuteMenuItem("Window/General/Game");EditorApplication.isPlaying=true;}

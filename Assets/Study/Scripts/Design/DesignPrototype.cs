@@ -33,7 +33,8 @@ public class DesignPrototype : MonoBehaviour {
  GameObject Box(string n,Vector3 p,Vector3 s,Material m,bool solid=true){return Shape(n,transform,PrimitiveType.Cube,p,s,m,solid);}
  void Sign(string caption,Vector3 position,Quaternion rotation,float size=.13f){
   var o=new GameObject(caption);o.transform.SetParent(transform);o.transform.position=position;o.transform.rotation=rotation;
-  var t=o.AddComponent<TextMesh>();t.text=caption;t.fontSize=64;t.characterSize=size;t.anchor=TextAnchor.MiddleCenter;t.color=new Color(.87f,.86f,.73f);signs.Add(o.transform);
+  var t=o.AddComponent<TextMesh>();t.text=caption;t.fontSize=64;t.characterSize=size;t.anchor=TextAnchor.MiddleCenter;t.color=new Color(.87f,.86f,.73f);
+  var renderer=o.GetComponent<Renderer>();var signMaterial=new Material(Resources.Load<Shader>("StudioSign"));signMaterial.mainTexture=renderer.sharedMaterial.mainTexture;renderer.sharedMaterial=signMaterial;signs.Add(o.transform);
  }
  void LightAt(Vector3 p,Color color,float range,float intensity){var o=new GameObject("Practical light");o.transform.SetParent(transform);o.transform.position=p;var l=o.AddComponent<Light>();l.type=LightType.Point;l.color=color;l.range=range;l.intensity=intensity;}
  void Table(Vector3 p){
@@ -59,10 +60,11 @@ public class DesignPrototype : MonoBehaviour {
   for(int i=0;i<4;i++){
    Vector3 p=stations[i];Box("Assignment station "+i,p+Vector3.up*.5f,new Vector3(2.8f,1f,1.1f),wood);
    Sign(new[]{"01 / CUT","02 / BUILD","03 / PHOTO","04 / CRITIQUE"}[i],p+new Vector3(0,2.6f,0),Quaternion.identity,.10f);
-   LightAt(p+Vector3.up*3,new Color(.95f,.65f,.32f),5,1.3f);
+   LightAt(p+Vector3.up*3,new Color(.90f,.79f,.60f),5,1.05f);
    Box("Station mat",p+Vector3.up*1.03f,new Vector3(2.3f,.03f,.8f),accent,false);
   }
-  Box("Cutter bed",stations[0]+new Vector3(0,1.1f,.05f),new Vector3(1.5f,.08f,.55f),paper,false);
+  Box("Cutter bed",stations[0]+new Vector3(0,1.075f,.05f),new Vector3(1.5f,.05f,.55f),metal,false);
+  Box("Cutting stock",stations[0]+new Vector3(0,1.104f,.05f),new Vector3(1.4f,.005f,.50f),paper,false);
   Box("Guillotine handle",stations[0]+new Vector3(.6f,1.4f,0),new Vector3(.06f,.65f,.06f),metal,false);
   model=new GameObject("Model / physical progress").transform;model.SetParent(transform);model.position=stations[1]+Vector3.up*1.08f;
   Shape("Model base",model,PrimitiveType.Cube,Vector3.zero,new Vector3(1.4f,.06f,.7f),paper);
@@ -72,12 +74,13 @@ public class DesignPrototype : MonoBehaviour {
   var body=new GameObject("Design student");body.transform.SetParent(transform);body.transform.position=new Vector3(0,0,-11);
   player=body.AddComponent<CharacterController>();player.height=1.75f;player.center=new Vector3(0,.875f,0);player.radius=.28f;player.stepOffset=.15f;
   var cam=new GameObject("Eyes");cam.transform.SetParent(body.transform,false);cam.transform.localPosition=new Vector3(0,1.6f,0);eye=cam.AddComponent<Camera>();eye.nearClipPlane=.04f;eye.farClipPlane=60;eye.fieldOfView=72;eye.backgroundColor=RenderSettings.fogColor;eye.clearFlags=CameraClearFlags.SolidColor;cam.AddComponent<AudioListener>();
-  var lamp=cam.AddComponent<Light>();lamp.type=LightType.Spot;lamp.range=14;lamp.spotAngle=75;lamp.intensity=2.2f;lamp.color=new Color(.85f,.88f,.76f);lamp.shadows=LightShadows.Soft;
+  var lamp=cam.AddComponent<Light>();lamp.type=LightType.Spot;lamp.range=14;lamp.spotAngle=75;lamp.intensity=1.55f;lamp.color=new Color(.91f,.94f,1f);lamp.shadows=LightShadows.Soft;
   sound=body.AddComponent<AudioSource>();foot=Tone(100,.08f);tool=Tone(190,.15f);
   var enemy=new GameObject("Professor / ceiling spider");enemy.transform.SetParent(transform);enemy.transform.position=new Vector3(0,4.7f,9);teacher=enemy.AddComponent<DesignSpider>();teacher.Initialize(this,skin,metal,paper);
   var key=new GameObject("Briefing / professor key light");key.transform.SetParent(transform);key.transform.position=new Vector3(2.5f,2.6f,5.8f);key.transform.LookAt(new Vector3(0,4,9));briefingLight=key.AddComponent<Light>();briefingLight.type=LightType.Spot;briefingLight.spotAngle=70;briefingLight.range=10;briefingLight.intensity=2;briefingLight.color=new Color(.87f,.76f,.59f);briefingLight.shadows=LightShadows.Soft;
   DesignStudio.Dress(this,wall,wood,metal,paper,accent,skin);
   workshop=gameObject.AddComponent<DesignWorkshop>();workshop.Initialize(this,wood,metal,paper,accent,skin);
+  WorkshopFinish.Apply(this,wood,paper,accent);paper=Resources.Load<Material>("Workshop/Paper");workshop.SetBoardMaterial(paper);
   Physics.SyncTransforms();DesignNavigation.Build();SetCursor(false);
  }
  public static AudioClip Tone(float hz,float length){int n=(int)(22050*length);var samples=new float[n];for(int i=0;i<n;i++){float t=i/22050f;samples[i]=Mathf.Sin(t*hz*6.283f)*Mathf.Exp(-t*24)*.3f;}var c=AudioClip.Create("Dry knock",n,1,22050,false);c.SetData(samples,0);return c;}

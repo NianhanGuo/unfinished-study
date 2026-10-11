@@ -16,8 +16,8 @@ public class ProfessorNeck:MonoBehaviour {
  }
  public void Pose(Vector3 start,Vector3 bend,Vector3 reach,Transform head,bool underTable){
   Vector3 end=head.position-head.forward*.11f-head.up*.24f;
-  Vector3 b=underTable?bend:Vector3.Lerp(start,end,.30f)-head.forward*.23f;
-  Vector3 c=underTable?reach:Vector3.Lerp(start,end,.70f)-head.forward*.19f;
+  Vector3 b=underTable?bend:Vector3.Lerp(start,end,.30f)-head.forward*.33f;
+  Vector3 c=underTable?reach:end-head.forward*.28f+head.up*.22f;
   float length=Vector3.Distance(start,b)+Vector3.Distance(b,c)+Vector3.Distance(c,end);
   for(int r=0;r<=Rings;r++){
    float t=r/(float)Rings;Vector3 p=Sample(start,b,c,end,t,underTable),tangent=(Sample(start,b,c,end,Mathf.Min(1,t+.005f),underTable)-Sample(start,b,c,end,Mathf.Max(0,t-.005f),underTable)).normalized;
